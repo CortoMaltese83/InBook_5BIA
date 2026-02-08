@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login</title>
+
+    <style>
+        :root {
+            --bg: #0b1220;
+            --card: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.12);
+            --text: rgba(255, 255, 255, 0.92);
+            --muted: rgba(255, 255, 255, 0.72);
+            --danger-bg: rgba(239, 68, 68, 0.18);
+            --danger-border: rgba(239, 68, 68, 0.45);
+            --danger-text: rgba(255, 255, 255, 0.92);
+            --success-bg: rgba(34, 197, 94, 0.18);
+            --success-border: rgba(34, 197, 94, 0.45);
+            --success-text: rgba(255, 255, 255, 0.92);
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --input-border: rgba(255, 255, 255, 0.16);
+            --focus: rgba(99, 102, 241, 0.65);
+            --btn: #6366f1;
+            --btn-hover: #4f46e5;
+            --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+            --radius: 14px;
+            --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: var(--font);
+            color: var(--text);
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(900px 420px at 18% 18%, rgba(99, 102, 241, 0.35), transparent 55%),
+                radial-gradient(700px 320px at 82% 26%, rgba(34, 197, 94, 0.22), transparent 55%),
+                radial-gradient(650px 340px at 50% 88%, rgba(59, 130, 246, 0.20), transparent 55%),
+                linear-gradient(180deg, #060a14 0%, var(--bg) 65%, #050913 100%);
+            padding: 24px;
+        }
+
+        .shell {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(56, 189, 248, 0.75));
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.25);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 22px;
+            line-height: 1.15;
+            letter-spacing: 0.2px;
+        }
+
+        .brand p {
+            margin: 3px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .alert {
+            border-radius: 12px;
+            padding: 12px 12px;
+            border: 1px solid transparent;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .alert.error {
+            background: var(--danger-bg);
+            border-color: var(--danger-border);
+            color: var(--danger-text);
+        }
+
+        .alert.success {
+            background: var(--success-bg);
+            border-color: var(--success-border);
+            color: var(--success-text);
+        }
+
+        form {
+            display: grid;
+            gap: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text);
+            padding: 12px 12px;
+            outline: none;
+            transition: box-shadow 150ms ease, border-color 150ms ease;
+        }
+
+        input::placeholder { color: rgba(255, 255, 255, 0.48); }
+
+        input:focus {
+            border-color: rgba(99, 102, 241, 0.75);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+        }
+
+        .row {
+            display: grid;
+            gap: 8px;
+        }
+
+        .actions {
+            display: grid;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        button {
+            appearance: none;
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            background: var(--btn);
+            color: white;
+            transition: transform 80ms ease, background 150ms ease, box-shadow 150ms ease;
+            box-shadow: 0 14px 30px rgba(99, 102, 241, 0.22);
+        }
+
+        button:hover {
+            background: var(--btn-hover);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .foot {
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .hint {
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.10);
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.45;
+        }
+
+        .kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.07);
+            color: rgba(255, 255, 255, 0.86);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+            button { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="shell">
+    <div class="brand" aria-label="Area di accesso">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+            <h1>Accedi</h1>
+            <p>Inserisci le credenziali per continuare.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div th:if="${param.error}" class="alert error" role="alert">
+            Credenziali non valide. Verifica username e password.
+        </div>
+
+        <div th:if="${param.logout}" class="alert success" role="status">
+            Logout effettuato correttamente.
+        </div>
+
+        <form th:action="@{/login}" method="post" novalidate>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div class="row">
+                <label for="username">Username</label>
+                <input id="username" name="username" type="text" autocomplete="username" required autofocus placeholder="es. user" />
+            </div>
+
+            <div class="row">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
+            </div>
+
+            <div class="actions">
+                <button type="submit">Login</button>
+            </div>
+
+            <div class="hint">
+                Suggerimento: premi <span class="kbd">Tab</span> per spostarti tra i campi e <span class="kbd">Invio</span> per inviare il form.
+            </div>
+        </form>
+    </div>
+
+    <div class="foot">
+        © <span th:text="${T(java.time.Year).now()}">2026</span>
+    </div>
+</div>
+
+</body>
+</html>
