@@ -27,4 +27,18 @@ public class DbUserDetailsService implements UserDetailsService {
                 .disabled(!u.isEnabled())
                 .build();
     }
+
+    public String RegisterUser (String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
+        AppUser u = new AppUser();
+
+        u.setUsername(username);
+        u.setPasswordHash(passwordHash);
+        u.setName(name);
+        u.setSurname(surname);
+        u.setRoles("TYPE_DOCENTE"); //registra di default come docente
+        u.setEnabled(enabled);
+        u.setEmail(email);
+
+
+    }
 }

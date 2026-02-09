@@ -32,7 +32,7 @@ public class AppUser {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    protected AppUser() {}
+    public AppUser() {}
 
     public AppUser(String email, String passwordHash, String name, String surname, String username, String roles, boolean enabled) {
         this.email = email;
