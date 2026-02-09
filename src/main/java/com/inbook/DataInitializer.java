@@ -15,8 +15,11 @@ public class DataInitializer {
         return args -> {
             if (repo.findByUsername("admin").isEmpty()) {
                 repo.save(new AppUser(
-                        "admin",
+                        "admin@gmail.com",
                         encoder.encode("admin123"),
+                        "admin0",
+                        "ad0",
+                        "admin",
                         "ROLE_ADMIN,ROLE_USER",
                         true
                 ));
