@@ -28,7 +28,7 @@ public class DbUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public String RegisterUser (String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
+    public AppUser RegisterUser (String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
         AppUser u = new AppUser();
 
         u.setUsername(username);
@@ -39,6 +39,7 @@ public class DbUserDetailsService implements UserDetailsService {
         u.setEnabled(enabled);
         u.setEmail(email);
 
-
+        return repo.save(u);
     }
+
 }
