@@ -1,0 +1,31 @@
+name: Discord notify
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send message to Discord
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          REPO: ${{ github.repository }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+        run: |
+          # Fallback anti "empty message"
+          msg="${COMMIT_MSG}"
+          if [ -z "${msg// }" ]; then
+            msg="Push su ${REPO} da ${ACTOR}"
+          fi
+
+          # Escape minimale per JSON (virgolette e backslash)
+          msg_escaped=$(printf '%s' "$msg" | sed 's/\\/\\\\/g; s/"/\\"/g')
+          payload="{\"content\":\"📌 **${REPO}**\\n👤 ${ACTOR}\\n🧾 ${msg_escaped}\\n🔗 ${COMMIT_URL}\"}"
+
+          curl -sS -H "Content-Type: application/json" \
+               -d "$payload" \
+               "$DISCORD_WEBHOOK"
