@@ -1,0 +1,196 @@
+/* Reset & Base Styles */
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #fcfcfc; /* Very light subtle background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #111;
+}
+
+/* Container & Card */
+.container {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.card {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05); /* Soft shadow */
+    text-align: center;
+}
+
+/* Logo */
+.logo {
+    margin-bottom: 20px;
+}
+
+.logo svg {
+    width: 64px;
+    height: 64px;
+    /* Custom SVG colors can be set here if not inline */
+}
+
+/* Typography */
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #000;
+}
+
+.subtitle {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+/* Buttons */
+.btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-outline {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.btn-outline:hover {
+    background: #f9f9f9;
+    border-color: #ccc;
+}
+
+.btn-primary {
+    background: linear-gradient(90deg, #7C3AED 0%, #8B5CF6 100%);
+    color: white;
+    font-weight: 600;
+    margin-top: 24px;
+    padding: 14px; /* Slightly taller */
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 24px 0;
+    position: relative;
+    color: #888;
+    font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #eee;
+}
+
+.divider span {
+    padding: 0 10px;
+    background: #fff; /* Match card bg */
+    z-index: 1; /* Ensure text sits on top if lines were absolute */
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.form-group {
+    text-align: left;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    min-width: 0;
+}
+
+label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #111;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+input:focus {
+    border-color: #7C3AED; /* Focus color matching button */
+}
+
+/* Footer Link */
+.footer-link {
+    margin-top: 24px;
+    font-size: 14px;
+    color: #555;
+}
+
+.footer-link a {
+    color: #4F46E5;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.footer-link a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .card {
+        padding: 24px;
+        box-shadow: none; /* Flatter on mobile usually looks cleaner or full width */
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+        margin-bottom: 0; /* Let form-group margin handle it */
+    }
+}

@@ -1,130 +1,29 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>5 BIA — Home</title>
 
-    <style>
-        :root { color-scheme: light dark; }
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-            line-height: 1.5;
-        }
-        header {
-            padding: 24px 20px;
-            border-bottom: 1px solid rgba(127,127,127,.25);
-        }
-        main {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 28px 20px 60px;
-        }
-        .hero {
-            display: grid;
-            gap: 10px;
-            margin: 18px 0 26px;
-        }
-        .badge {
-            display: inline-block;
-            padding: 6px 10px;
-            border: 1px solid rgba(127,127,127,.35);
-            border-radius: 999px;
-            font-size: 12px;
-            opacity: .9;
-            width: fit-content;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 14px;
-            margin-top: 18px;
-        }
-        .card {
-            border: 1px solid rgba(127,127,127,.25);
-            border-radius: 12px;
-            padding: 16px;
-        }
-        .card h3 { margin: 0 0 8px; font-size: 16px; }
-        .muted { opacity: .75; }
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 14px;
-        }
-        a.button {
-            display: inline-block;
-            padding: 10px 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(127,127,127,.35);
-            text-decoration: none;
-        }
-        footer {
-            margin-top: 40px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(127,127,127,.25);
-            font-size: 12px;
-            opacity: .8;
-        }
-        code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    </style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scopri InBook</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
 </head>
 
 <body>
-<header>
-    <strong>Progetto 5 BIA</strong>
-</header>
+<div class="hero-section">
+    <div class="content">
+        <h1>Scopri InBook</h1>
+        <p>Facile, semplice e veloce</p>
 
-<main>
-    <section class="hero">
-        <span class="badge">Placeholder • Home</span>
-        <h1>Home — Progetto 5 BIA</h1>
-        <p class="muted">
-            Questa è una pagina provvisoria. Qui verranno messi i contenuti principali (dashboard, navigazione,
-            accesso utenti, ecc.).
-        </p>
-
-        <div class="actions">
-            <!-- Collega qui le future rotte -->
-            <a class="button" href="/login">Login</a>
-            <a class="button" href="/register">Registrazione</a>
-            <a class="button" href="/api">API</a>
-            <a class="button" href="/h2-console">H2 Console</a>
+        <div class="buttons-container">
+            <a href="signin.html" class="btn btn-white">Registrati</a>
+            <a href="login.html" class="btn btn-purple">Accedi</a>
         </div>
-    </section>
+    </div>
+</div>
 
-    <section class="grid">
-        <div class="card">
-            <h3>Da fare</h3>
-            <ul class="muted">
-                <li>Definire le rotte principali (es. <code>/</code>, <code>/dashboard</code>, <code>/login</code>)</li>
-                <li>Impostare layout e navbar</li>
-                <li>Collegare i servizi backend / DB</li>
-            </ul>
-        </div>
-
-        <div class="card">
-            <h3>Stato</h3>
-            <p class="muted">
-                Applicazione Spring Boot attiva. Questa pagina è servita come risorsa statica:
-                <code>classpath:/static/index.html</code>.
-            </p>
-        </div>
-
-        <div class="card">
-            <h3>Note</h3>
-            <p class="muted">
-                Quando passerai a Thymeleaf, potrai sostituire questa home con una view (es. <code>home.html</code>)
-                e un controller per <code>/</code>.
-            </p>
-        </div>
-    </section>
-
-    <footer>
-        <span>© 5 BIA — placeholder home</span>
-    </footer>
-</main>
 </body>
+
 </html>

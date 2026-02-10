@@ -1,0 +1,142 @@
+/* Reset di base e Font */
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+body,
+html {
+    height: 100%;
+    width: 100%;
+    background-color: #050505;
+    /* Sfondo nero profondo sotto l'immagine */
+    overflow: hidden;
+    /* Blocca lo scroll */
+}
+
+/* Contenitore principale */
+.hero-section {
+    position: relative;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Gestione dello sfondo sfocato e scuro */
+.hero-section::before {
+    content: "";
+    position: absolute;
+    top: 0%;
+    /* Margini negativi per evitare bordi bianchi col blur */
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    /* L'immagine della libreria fornita */
+    background-image: url('image.png');
+    background-size: cover;
+    background-position: center;
+
+    filter: brightness(1) blur(12px);
+    z-index: 0;
+}
+
+/* Contenuto Centrale */
+.content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Animazione leggera di entrata (opzionale, ma rende meglio) */
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Titolo "Scopri InBook" */
+h1 {
+    /* Colore campionato esattamente dallo screenshot (Viola elettrico) */
+    color: #5538EE;
+    font-size: 4.5rem;
+    /* Dimensione grande */
+    font-weight: 800;
+    /* Extra bold */
+    margin-bottom: 12px;
+    letter-spacing: -1.5px;
+    /* Spaziatura stretta tipica di Inter */
+    line-height: 1;
+}
+
+/* Sottotitolo */
+p {
+    font-size: 1.3rem;
+    color: #FFFFFF;
+    font-weight: 500;
+    margin-bottom: 35px;
+    letter-spacing: -0.3px;
+}
+
+/* Contenitore Bottoni */
+.buttons-container {
+    display: flex;
+    gap: 12px;
+}
+
+/* Stile base pulsanti */
+.btn {
+    text-decoration: none;
+    padding: 10px 22px;
+    /* Dimensioni compatte */
+    border-radius: 50px;
+    /* Pillola perfetta */
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: transform 0.2s ease, opacity 0.2s;
+    border: 0;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+/* Pulsante Bianco */
+.btn-white {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+/* Pulsante Viola */
+.btn-purple {
+    background-color: #5538EE;
+    /* Stesso colore del titolo */
+    color: #FFFFFF;
+}
+
+/* Animazione semplice */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Adattamento Mobile */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2.8rem;
+    }
+
+    p {
+        font-size: 1.1rem;
+    }
+}
