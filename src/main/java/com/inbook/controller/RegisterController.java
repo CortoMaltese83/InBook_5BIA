@@ -17,7 +17,7 @@ public class RegisterController {
         this.passwordEncoder = passwordEncoder;
 
     }
-
+ // c
     @PostMapping("/auth/register")
     @ResponseBody
     public String Register(@RequestBody Docente d){
