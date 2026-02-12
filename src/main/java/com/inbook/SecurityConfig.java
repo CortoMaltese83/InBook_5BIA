@@ -57,8 +57,8 @@ public class SecurityConfig {
     SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/greeting", "/setcolor",
-                                "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        .requestMatchers("/", "/index.html", "/css/**", "/images/**",  "/greeting", "/setcolor",
+                                "/images/**", "/webjars/**",
                                 "/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )

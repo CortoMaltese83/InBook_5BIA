@@ -37,7 +37,7 @@ html {
     width: 100%;
     height: 100%;
     /* L'immagine della libreria fornita */
-    background-image: url('image.png');
+    background-image: url('../images/image.png');
     background-size: cover;
     background-position: center;
 

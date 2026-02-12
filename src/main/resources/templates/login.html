@@ -1,255 +1,73 @@
 <!DOCTYPE html>
-<html lang="it" xmlns:th="http://www.thymeleaf.org">
+<html lang="it">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login</title>
-
-    <style>
-        :root {
-            --bg: #0b1220;
-            --card: rgba(255, 255, 255, 0.06);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --text: rgba(255, 255, 255, 0.92);
-            --muted: rgba(255, 255, 255, 0.72);
-            --danger-bg: rgba(239, 68, 68, 0.18);
-            --danger-border: rgba(239, 68, 68, 0.45);
-            --danger-text: rgba(255, 255, 255, 0.92);
-            --success-bg: rgba(34, 197, 94, 0.18);
-            --success-border: rgba(34, 197, 94, 0.45);
-            --success-text: rgba(255, 255, 255, 0.92);
-            --input-bg: rgba(255, 255, 255, 0.08);
-            --input-border: rgba(255, 255, 255, 0.16);
-            --focus: rgba(99, 102, 241, 0.65);
-            --btn: #6366f1;
-            --btn-hover: #4f46e5;
-            --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
-            --radius: 14px;
-            --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: var(--font);
-            color: var(--text);
-            min-height: 100vh;
-            display: grid;
-            place-items: center;
-            background:
-                radial-gradient(900px 420px at 18% 18%, rgba(99, 102, 241, 0.35), transparent 55%),
-                radial-gradient(700px 320px at 82% 26%, rgba(34, 197, 94, 0.22), transparent 55%),
-                radial-gradient(650px 340px at 50% 88%, rgba(59, 130, 246, 0.20), transparent 55%),
-                linear-gradient(180deg, #060a14 0%, var(--bg) 65%, #050913 100%);
-            padding: 24px;
-        }
-
-        .shell {
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .logo {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            border: 1px solid var(--card-border);
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.95), rgba(56, 189, 248, 0.75));
-            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.25);
-        }
-
-        .brand h1 {
-            margin: 0;
-            font-size: 22px;
-            line-height: 1.15;
-            letter-spacing: 0.2px;
-        }
-
-        .brand p {
-            margin: 3px 0 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .card {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            padding: 20px;
-            backdrop-filter: blur(10px);
-        }
-
-        .alert {
-            border-radius: 12px;
-            padding: 12px 12px;
-            border: 1px solid transparent;
-            margin-bottom: 12px;
-            font-size: 14px;
-        }
-
-        .alert.error {
-            background: var(--danger-bg);
-            border-color: var(--danger-border);
-            color: var(--danger-text);
-        }
-
-        .alert.success {
-            background: var(--success-bg);
-            border-color: var(--success-border);
-            color: var(--success-text);
-        }
-
-        form {
-            display: grid;
-            gap: 12px;
-        }
-
-        label {
-            display: block;
-            font-size: 13px;
-            color: var(--muted);
-            margin-bottom: 6px;
-        }
-
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            border-radius: 12px;
-            border: 1px solid var(--input-border);
-            background: var(--input-bg);
-            color: var(--text);
-            padding: 12px 12px;
-            outline: none;
-            transition: box-shadow 150ms ease, border-color 150ms ease;
-        }
-
-        input::placeholder { color: rgba(255, 255, 255, 0.48); }
-
-        input:focus {
-            border-color: rgba(99, 102, 241, 0.75);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
-        }
-
-        .row {
-            display: grid;
-            gap: 8px;
-        }
-
-        .actions {
-            display: grid;
-            gap: 10px;
-            margin-top: 4px;
-        }
-
-        button {
-            appearance: none;
-            border: 0;
-            border-radius: 12px;
-            padding: 12px 14px;
-            font-weight: 700;
-            cursor: pointer;
-            background: var(--btn);
-            color: white;
-            transition: transform 80ms ease, background 150ms ease, box-shadow 150ms ease;
-            box-shadow: 0 14px 30px rgba(99, 102, 241, 0.22);
-        }
-
-        button:hover {
-            background: var(--btn-hover);
-        }
-
-        button:active {
-            transform: translateY(1px);
-        }
-
-        .foot {
-            margin-top: 12px;
-            color: var(--muted);
-            font-size: 12px;
-            text-align: center;
-        }
-
-        .hint {
-            margin-top: 10px;
-            padding-top: 12px;
-            border-top: 1px solid rgba(255, 255, 255, 0.10);
-            color: var(--muted);
-            font-size: 12px;
-            line-height: 1.45;
-        }
-
-        .kbd {
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            background: rgba(255, 255, 255, 0.07);
-            color: rgba(255, 255, 255, 0.86);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * { transition: none !important; }
-            button { box-shadow: none; }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accedi - InBook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/login.css">
 </head>
+
 <body>
-
-<div class="shell">
-    <div class="brand" aria-label="Area di accesso">
-        <div class="logo" aria-hidden="true"></div>
-        <div>
-            <h1>Accedi</h1>
-            <p>Inserisci le credenziali per continuare.</p>
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo">
+            <img src="../static/images/InBook2.svg" alt="InBook Logo" width="80" height="80">
         </div>
-    </div>
+        <h1>Bentornato da InBook!</h1>
+        <p class="subtitle">Accedi al tuo account per continuare</p>
 
-    <div class="card">
-        <div th:if="${param.error}" class="alert error" role="alert">
-            Credenziali non valide. Verifica username e password.
+        <div class="social-login">
+            <button class="social-btn google">
+                <svg class="icon" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
+                        <path fill="#4285F4"
+                              d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
+                        <path fill="#34A853"
+                              d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
+                        <path fill="#FBBC05"
+                              d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.734 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
+                        <path fill="#EA4335"
+                              d="M -14.754 43.989 C -12.984 43.989 -11.424 44.599 -10.174 45.789 L -6.704 42.319 C -8.804 40.359 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
+                    </g>
+                </svg>
+                Continua con Google
+            </button>
+            <button class="social-btn apple">
+                <svg class="icon" viewBox="0 0 384 512" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#000000"
+                          d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 52.3-11.4 69.5-34.3z" />
+                </svg>
+                Continua con Apple
+            </button>
         </div>
 
-        <div th:if="${param.logout}" class="alert success" role="status">
-            Logout effettuato correttamente.
+        <div class="divider">
+            <span>oppure accedi con email</span>
         </div>
 
-        <form th:action="@{/login}" method="post" novalidate>
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
-            <div class="row">
-                <label for="username">Username</label>
-                <input id="username" name="username" type="text" autocomplete="username" required autofocus placeholder="es. user" />
+        <form action="#" class="login-form">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <div class="label-row">
+                    <label for="password">Password</label>
+                    <a href="#" class="forgot-password">Password dimenticata?</a>
+                </div>
+                <input type="password" id="password" name="password" required>
             </div>
 
-            <div class="row">
-                <label for="password">Password</label>
-                <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••" />
-            </div>
-
-            <div class="actions">
-                <button type="submit">Login</button>
-            </div>
-
-            <div class="hint">
-                Suggerimento: premi <span class="kbd">Tab</span> per spostarti tra i campi e <span class="kbd">Invio</span> per inviare il form.
-            </div>
+            <button type="submit" class="submit-btn">Accedi</button>
         </form>
-    </div>
 
-    <div class="foot">
-        © <span th:text="${T(java.time.Year).now()}">2026</span>
+        <div class="footer-links">
+            Non hai un account? <a href="signin.html">Registrati</a>
+        </div>
     </div>
 </div>
-
 </body>
+
 </html>
