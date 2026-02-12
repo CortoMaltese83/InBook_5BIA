@@ -6,14 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Accedi - InBook</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../static/css/login.css">
+    <link rel="stylesheet" href="./css/login.css">
 </head>
 
 <body>
 <div class="login-container">
     <div class="login-card">
         <div class="logo">
-            <img src="../static/images/InBook2.svg" alt="InBook Logo" width="80" height="80">
+            <img src="../images/InBook2.svg" alt="InBook Logo" width="80" height="80">
         </div>
         <h1>Bentornato da InBook!</h1>
         <p class="subtitle">Accedi al tuo account per continuare</p>
@@ -47,7 +47,7 @@
             <span>oppure accedi con email</span>
         </div>
 
-        <form action="#" class="login-form">
+        <form action="/login" class="login-form">
             <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required>
@@ -64,7 +64,7 @@
         </form>
 
         <div class="footer-links">
-            Non hai un account? <a href="signin.html">Registrati</a>
+            Non hai un account? <a href="/signin">Registrati</a>
         </div>
     </div>
 </div>

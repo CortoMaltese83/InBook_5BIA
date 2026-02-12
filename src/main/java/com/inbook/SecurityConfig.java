@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/css/**", "/images/**",  "/greeting", "/setcolor",
                                 "/images/**", "/webjars/**",
-                                "/h2-console/**").permitAll()
+                                "/h2-console/**", "/signin").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
