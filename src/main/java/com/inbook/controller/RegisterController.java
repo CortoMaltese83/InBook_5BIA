@@ -20,22 +20,25 @@ public class RegisterController {
     }
  // c
     @PostMapping("/auth/register")
-    @ResponseBody
-    public String Register(@RequestBody Docente d){
-        passwordEncoder.encode(d.getPassword());
+  //  @ResponseBody
+    public String Register(Docente d){
+        try{
+            service.RegisterUser(
+                    d.getEmail(),
+                    passwordEncoder.encode(d.getPassword()),
+                    d.getUsername(),
+                    d.getName(),
+                    d.getSurname(),
+                    "",
+                    true
+            );
 
-        service.RegisterUser(
-                d.getEmail(),
-                passwordEncoder.encode(d.getPassword()),
-                d.getUsername(),
-                d.getName(),
-                d.getSurname(),
-                "",
-                true
-        );
-
-        return "login";
+            return "redirect:/login";
+        }catch (RuntimeException e) {
+        return "redirect:/signin";
     }
+    }
+
 
     @GetMapping("/signin")
     public String signin() {
