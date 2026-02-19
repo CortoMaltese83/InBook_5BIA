@@ -31,17 +31,13 @@ public class DbUserDetailsService implements UserDetailsService {
     public AppUser RegisterUser (String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
         AppUser u = new AppUser();
 
-        if (repo.existsByEmail(email)) {
-            throw new RuntimeException("Utente già esistente con email: " + email);
-        }
-
-        u.setEmail(email);
-        u.setUsername(email);
+        u.setUsername(username);
         u.setPasswordHash(passwordHash);
         u.setName(name);
         u.setSurname(surname);
         u.setRoles("TYPE_DOCENTE"); //registra di default come docente
         u.setEnabled(enabled);
+        u.setEmail(email);
 
         return repo.save(u);
     }
