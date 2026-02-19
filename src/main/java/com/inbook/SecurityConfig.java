@@ -63,8 +63,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .defaultSuccessUrl("/", true)
                         .loginPage("/login")
+                        .defaultSuccessUrl("/admin", true)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -75,7 +75,7 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**","/auth/register"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/auth/register", "/login"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
