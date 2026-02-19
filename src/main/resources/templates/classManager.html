@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBook - Gestione Classi</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fleur+De+Leah&display=swap"
+          rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/classManager.css">
+</head>
+
+<body class="particle-bg">
+<canvas id="particle-canvas"></canvas>
+
+<header class="header">
+    <div class="header-left">
+        <h1>Gestione Classi</h1>
+    </div>
+    <div class="header-right">
+        <div class="logo">
+            <img src="/images/InBook2.svg" alt="InBook Logo" width="32" height="32">
+            <span>InBook App</span>
+        </div>
+        <nav class="nav">
+            <a href="/admin" class="nav-link">Home</a>
+            <a href="/admin/classes" class="nav-link active">Classi</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-container">
+    <div class="table-container">
+        <table class="class-table">
+            <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Anno</th>
+                <th>Sezione</th>
+                <th>Stato</th>
+                <th>Data Creazione</th>
+                <th>Data Aggiornamento</th>
+                <th>Azioni</th>
+            </tr>
+            </thead>
+            <tbody id="table-body">
+            <!-- Rows will be injected by JS -->
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Add Button -->
+<button class="add-btn" id="add-btn" title="Aggiungi Classe">
+    <i class="fa-solid fa-plus"></i> Aggiungi
+</button>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modal-backdrop"></div>
+
+<!-- Add/Edit Modal -->
+<div class="modal" id="form-modal">
+    <h2 id="modal-title">Aggiungi Classe</h2>
+    <form id="class-form">
+        <div class="form-group">
+            <label for="nome">Nome</label>
+            <input type="text" id="nome" required placeholder="Es. 3A Informatica">
+        </div>
+        <div class="form-group-row">
+            <div class="form-group">
+                <label for="anno">Anno</label>
+                <input type="number" id="anno" required min="1" max="5" placeholder="3">
+            </div>
+            <div class="form-group">
+                <label for="sezione">Sezione</label>
+                <input type="text" id="sezione" required placeholder="A">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="stato">Stato</label>
+            <select id="stato" required>
+                <option value="active">Attiva</option>
+                <option value="archived">Archiviata</option>
+                <option value="hidden">Nascosta</option>
+            </select>
+        </div>
+
+        <div class="form-group-row dates-row">
+            <div class="form-group">
+                <label>Creato il</label>
+                <span id="created-at-display" class="date-display">-</span>
+            </div>
+            <div class="form-group">
+                <label>Aggiornato il</label>
+                <span id="updated-at-display" class="date-display">-</span>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-cancel" onclick="closeAllModals()">Annulla</button>
+            <button type="submit" class="btn-confirm" id="btn-save">Aggiungi</button>
+        </div>
+    </form>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="delete-modal">
+    <h2>Elimina Classe</h2>
+    <p>Sei sicuro di voler eliminare questa riga? L'operazione non Ã¨ reversibile.</p>
+    <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeAllModals()">Annulla</button>
+        <button type="button" class="btn-confirm btn-delete" id="btn-confirm-delete">Conferma</button>
+    </div>
+</div>
+
+<script src="/js/classManager.js"></script>
+</body>
+
+</html>

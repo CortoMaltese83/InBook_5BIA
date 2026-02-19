@@ -1,4 +1,4 @@
-package com.inbook.controller;
+package com.inbook.dto;
 
 public class Docente {
     private String email;
