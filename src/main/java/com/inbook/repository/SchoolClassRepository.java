@@ -1,12 +1,12 @@
 package com.inbook.repository;
 
-import com.inbook.repository.entity.schoolClass;
+import com.inbook.repository.entity.SchoolClass;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-public interface schoolClassRepository extends JpaRepository<schoolClass, Long> {
+public interface SchoolClassRepository extends JpaRepository<SchoolClass, Long> {
 
-    Optional<schoolClass> findById(Long id);
+    Optional<SchoolClass> findById(Long id);
     boolean existsById(Long id);
     void deleteById(Long id);
 

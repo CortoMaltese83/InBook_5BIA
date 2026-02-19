@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "Classe")
-public class schoolClass {
+public class SchoolClass {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,9 +29,9 @@ public class schoolClass {
     @Column(nullable = false,length = 30)
     private Long updated_at;
 
-    public schoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
+    public SchoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
 
-    public schoolClass(Long id, String nome, String annoScolastico, String sezione, String stato, Long created_at, Long updated_at) {
+    public SchoolClass(Long id, String nome, String annoScolastico, String sezione, String stato, Long created_at, Long updated_at) {
         this.id = id;
         this.nome = nome;
         this.annoScolastico = annoScolastico;
