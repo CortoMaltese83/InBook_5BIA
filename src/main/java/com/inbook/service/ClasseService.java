@@ -17,7 +17,7 @@ public class ClasseService {
         this.repo = repo;
     }
 
-    public SchoolClass AddClass (String nome, String annoScolastico, String sezione, String stato){
+    public SchoolClass AddClass(String nome, String annoScolastico, String sezione, String stato) {
 
         SchoolClass c = new SchoolClass();
         c.setNome(nome);
@@ -27,17 +27,14 @@ public class ClasseService {
         return repo.save(c);
 
     }
-        public SchoolClass modifyClass(int id,String nome,String annoScolastico, String sezione, String stato){
 
-            System.out.println("service per modificare una classe");
-            return null;
-        }
-
-    public SchoolClass DeleteClass(String nome,String annoScolastico, String sezione, String stato){
-
-        System.out.println("service per modificare una classe");
-        return null;
-
+    public SchoolClass modifyClass(Long id, String nome, String annoScolastico, String sezione, String stato) {
+        SchoolClass c = repo.findById(id).orElseThrow(() -> new RuntimeException("classe non trovata"));
+        c.setNome(nome);
+        c.setAnnoScolastico(stato);
+        c.setSezione(sezione);
+        c.setStato(stato);
+        return repo.save(c);
     }
 }
 
