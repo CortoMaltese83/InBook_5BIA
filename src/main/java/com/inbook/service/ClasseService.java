@@ -36,6 +36,14 @@ public class ClasseService {
         c.setStato(stato);
         return repo.save(c);
     }
+    public void deleteClass(Long id){
+        if (repo.existsById(id)){
+            repo.deleteById(id);
+        }
+        else{
+            throw new RuntimeException("classe non trovata");
+        }
+    }
 }
 
 
