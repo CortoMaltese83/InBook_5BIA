@@ -7,6 +7,8 @@ import com.inbook.repository.entity.SchoolClass;
 import com.inbook.repository.SchoolClassRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static org.aspectj.weaver.tools.cache.SimpleCacheFactory.enabled;
 
 @Service
@@ -43,6 +45,10 @@ public class ClasseService {
         else{
             throw new RuntimeException("classe non trovata");
         }
+
+    }
+    public List<SchoolClass> getAllClasses() {
+        return repo.findAll();
     }
 }
 
