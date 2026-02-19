@@ -9,7 +9,7 @@ public class schoolClass {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Long id;
 
     @Column(nullable = false,length = 2)
     private String nome;
@@ -31,7 +31,7 @@ public class schoolClass {
 
     public schoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
 
-    public schoolClass(int id, String nome, String annoScolastico, String sezione, String stato, Long created_at, Long updated_at) {
+    public schoolClass(Long id, String nome, String annoScolastico, String sezione, String stato, Long created_at, Long updated_at) {
         this.id = id;
         this.nome = nome;
         this.annoScolastico = annoScolastico;
@@ -42,7 +42,7 @@ public class schoolClass {
     }
 
     //GETTER
-    public int getId() { return id; }
+    public Long getId() { return id; }
     public String getNome() { return nome; }
     public String getAnnoScolastico() { return annoScolastico; }
     public String getSezione() { return sezione; }
@@ -51,7 +51,7 @@ public class schoolClass {
     public Long getUpdated_at() { return updated_at; }
 
     //SETTER
-    public void setId(int id) {this.id = id;}
+    public void setId(Long id) {this.id = id;}
     public void setNome(String nome) {this.nome = nome;}
     public void setAnnoScolastico(String annoScolastico) {this.annoScolastico = annoScolastico;}
     public void setSezione(String sezione) {this.sezione = sezione;}
