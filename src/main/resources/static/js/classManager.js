@@ -1,5 +1,6 @@
 // Initial Data
 let classes = [];
+const API_URL = '/classe';
 
 let editingId = null;
 let deleteId = null;
@@ -46,6 +47,28 @@ const formatDate = (date) => {
 
 
 // --- Core Functions ---
+
+async function loadClasses() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('Errore nel caricamento delle classi');
+        const data = await response.json();
+        classes = data.map(cls => ({
+            id: cls.id,
+            name: cls.nome,
+            year: cls.annoScolastico,
+            section: cls.sezione,
+            status: cls.stato,
+            createdAt: formatDate(cls.created_at),
+            updatedAt: formatDate(cls.updated_at),
+            rawCreatedAt: cls.created_at
+        }));
+        renderTable();
+    } catch (error) {
+        console.error('Error:', error);
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ' + error.message + '</td></tr>';
+    }
+}
 
 function renderTable() {
     tableBody.innerHTML = '';
@@ -119,7 +142,7 @@ function openEditModal(id) {
     updatedAtDisplay.textContent = cls.updatedAt;
 
     // Start updating them "real-time"
-    startDateUpdates(cls.createdAt); // Keep creation date static if we want, or simple update 'updatedAt' only?
+    startDateUpdates(cls.rawCreatedAt); // Keep creation date static if we want, or simple update 'updatedAt' only?
     // Requirement: "tranne data di creazione e data di update che verranno aggiornati in tempo reale"
     // I will interpret this as: update current displayed time as "Now" for update date,
     // but creation date should technically stay fixed if editing.
@@ -176,44 +199,63 @@ function stopDateUpdates() {
 
 addBtn.addEventListener('click', openAddModal);
 
-classForm.addEventListener('submit', (e) => {
+classForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const nowStr = formatDate(new Date());
+    const now = Date.now();
 
-    const formData = {
-        name: nameInput.value,
-        year: yearInput.value,
-        section: sectionInput.value,
-        status: statusInput.value,
-        updatedAt: nowStr
+    const clsData = {
+        nome: nameInput.value,
+        annoScolastico: yearInput.value,
+        sezione: sectionInput.value,
+        stato: statusInput.value,
+        updated_at: now
     };
 
-    if (editingId) {
-        // Update existing
-        const index = classes.findIndex(c => c.id === editingId);
-        if (index !== -1) {
-            classes[index] = { ...classes[index], ...formData };
+    try {
+        let response;
+        if (editingId) {
+            // Update existing
+            const existingCls = classes.find(c => c.id === editingId);
+            clsData.id = editingId;
+            clsData.created_at = existingCls.rawCreatedAt || now;
+            response = await fetch(`${API_URL}/${editingId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clsData)
+            });
+        } else {
+            // Create new
+            clsData.created_at = now;
+            response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(clsData)
+            });
         }
-    } else {
-        // Create new
-        const newId = classes.length > 0 ? Math.max(...classes.map(c => c.id)) + 1 : 1;
-        classes.push({
-            id: newId,
-            ...formData,
-            createdAt: nowStr // New creation date
-        });
-    }
 
-    renderTable();
-    closeAllModals();
+        if (!response.ok) throw new Error('Errore durante il salvataggio');
+
+        await loadClasses();
+        closeAllModals();
+    } catch (error) {
+        alert('Si è verificato un errore: ' + error.message);
+    }
 });
 
-btnConfirmDelete.addEventListener('click', () => {
+btnConfirmDelete.addEventListener('click', async () => {
     if (deleteId) {
-        classes = classes.filter(c => c.id !== deleteId);
-        renderTable();
-        closeAllModals();
-        deleteId = null;
+        try {
+            const response = await fetch(`${API_URL}/${deleteId}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Errore durante l\'eliminazione');
+
+            await loadClasses();
+            closeAllModals();
+            deleteId = null;
+        } catch (error) {
+            alert('Errore durante l\'eliminazione: ' + error.message);
+        }
     }
 });
 
@@ -221,7 +263,7 @@ btnConfirmDelete.addEventListener('click', () => {
 modalBackdrop.addEventListener('click', closeAllModals);
 
 // Initial Render
-renderTable();
+loadClasses();
 
 // Auto-fill Name logic
 let isNameManuallyEdited = false;
