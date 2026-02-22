@@ -66,7 +66,14 @@ public class ClasseController{
                         Map<String, Object> map = new HashMap<>();
                         map.put("id", c.getId());
                         map.put("nome", c.getNome());
-                        map.put("anno", c.getAnno());
+                        
+                        String anno = c.getAnno();
+                        if (anno == null && c.getNome() != null && c.getSezione() != null) {
+                            // Fallback: Infer anno from nome (e.g., "5BIA" minus "BIA" = "5")
+                            anno = c.getNome().replace(c.getSezione(), "");
+                        }
+                        map.put("anno", anno);
+                        
                         map.put("sezione", c.getSezione());
                         map.put("stato", c.getStato());
                         map.put("created_at", c.getCreated_at());

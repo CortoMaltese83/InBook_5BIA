@@ -13,7 +13,7 @@ public class SchoolClass {
     @Column(nullable = false,length = 10)
     private String nome;
 
-    @Column(name = "anno", nullable = true, length = 7)
+    @Column(nullable = true, length = 2)
     private String anno;
 
     @Column(nullable = false,length = 3)
