@@ -4,7 +4,6 @@ import com.inbook.repository.SchoolClassRepository;
 import com.inbook.repository.entity.SchoolClass;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -15,26 +14,26 @@ public class ClasseService {
         this.repo = repo;
     }
 
-    public SchoolClass AddClass(String nome, String annoScolastico, String sezione, String stato, LocalDateTime created_at, LocalDateTime update_at) {
+    public SchoolClass AddClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at) {
 
         SchoolClass c = new SchoolClass();
-        c.setNome(nome);
-        c.setAnnoScolastico(stato);
+        c.setNome(anno + sezione);
+        c.setAnno(anno);
         c.setSezione(sezione);
         c.setStato(stato);
-        c.setCreated_at(created_at);
-        c.setUpdated_at(update_at);
+        c.setCreated_at(created_at != null ? created_at : System.currentTimeMillis());
+        c.setUpdated_at(update_at != null ? update_at : System.currentTimeMillis());
         return repo.save(c);
 
     }
 
-    public SchoolClass modifyClass(Long id, String nome, String annoScolastico, String sezione, String stato, LocalDateTime update_at) {
+    public SchoolClass modifyClass(Long id, String nome, String anno, String sezione, String stato, Long update_at) {
         SchoolClass c = repo.findById(id).orElseThrow(() -> new RuntimeException("classe non trovata"));
-        c.setNome(nome);
-        c.setAnnoScolastico(stato);
+        c.setNome(anno + sezione);
+        c.setAnno(anno);
         c.setSezione(sezione);
         c.setStato(stato);
-        c.setUpdated_at(update_at);
+        c.setUpdated_at(update_at != null ? update_at : System.currentTimeMillis());
         return repo.save(c);
     }
     public void deleteClass(Long id){

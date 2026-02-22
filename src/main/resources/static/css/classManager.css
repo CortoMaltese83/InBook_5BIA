@@ -140,12 +140,17 @@ body {
     gap: 2rem;
 }
 
+.logo img {
+    filter: brightness(0) invert(1);
+}
+
 .logo {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-weight: 700;
     font-size: 1.1rem;
+    color: white;
 }
 
 .nav {

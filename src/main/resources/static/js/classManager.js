@@ -1,6 +1,6 @@
 // Initial Data
 let classes = [];
-const API_URL = '/classe';
+const API_URL = '/classe-data';
 
 let editingId = null;
 let deleteId = null;
@@ -16,10 +16,13 @@ const classForm = document.getElementById('class-form');
 const btnSave = document.getElementById('btn-save');
 const btnConfirmDelete = document.getElementById('btn-confirm-delete');
 const addBtn = document.getElementById('add-btn');
+const classIdInput = document.getElementById('class-id');
+const deleteClassIdInput = document.getElementById('delete-class-id');
+const deleteForm = document.getElementById('delete-form');
 
 // Inputs
 const nameInput = document.getElementById('nome');
-const yearInput = document.getElementById('anno');
+const yearInput = document.getElementById('class-anno');
 const sectionInput = document.getElementById('sezione');
 const statusInput = document.getElementById('stato');
 const createdAtDisplay = document.getElementById('created-at-display');
@@ -51,17 +54,16 @@ const formatDate = (date) => {
 async function loadClasses() {
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Errore nel caricamento delle classi');
+        if (!response.ok) throw new Error(`Errore nel caricamento delle classi (Status: ${response.status})`);
         const data = await response.json();
         classes = data.map(cls => ({
             id: cls.id,
-            name: cls.nome,
-            year: cls.annoScolastico,
-            section: cls.sezione,
-            status: cls.stato,
-            createdAt: formatDate(cls.created_at),
-            updatedAt: formatDate(cls.updated_at),
-            rawCreatedAt: cls.created_at
+            nome: cls.nome,
+            anno: cls.anno,
+            sezione: cls.sezione,
+            stato: cls.stato,
+            createdAt: cls.created_at,
+            updatedAt: cls.updated_at
         }));
         renderTable();
     } catch (error) {
@@ -81,12 +83,12 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.style.animationDelay = `${index * 0.05}s`;
         tr.innerHTML = `
-            <td><strong>${cls.name}</strong></td>
-            <td>${cls.year}</td>
-            <td>${cls.section}</td>
-            <td>${getStatusBadge(cls.status)}</td>
-            <td>${cls.createdAt}</td>
-            <td>${cls.updatedAt}</td>
+            <td><strong>${cls.nome}</strong></td>
+            <td>${cls.anno}</td>
+            <td>${cls.sezione}</td>
+            <td>${getStatusBadge(cls.stato)}</td>
+            <td>${formatDate(cls.createdAt)}</td>
+            <td>${formatDate(cls.updatedAt)}</td>
             <td>
                 <button class="action-btn btn-edit" onclick="openEditModal(${cls.id})"><i class="fa-solid fa-pencil"></i></button>
                 <button class="action-btn btn-delete" onclick="openDeleteModal(${cls.id})"><i class="fa-solid fa-trash"></i></button>
@@ -100,14 +102,8 @@ function openAddModal() {
     editingId = null;
     modalTitle.textContent = "Aggiungi Classe";
     btnSave.textContent = "Aggiungi";
-    btnSave.textContent = "Aggiungi";
-    classForm.reset();
-    isNameManuallyEdited = false; // Reset flag
-
-    // Initial dates for new item (current time)
-    // Initial dates for new item (current time)
-    startDateUpdates();
-
+    classForm.action = "/classe";
+    classIdInput.value = "";
     showModal(formModal);
 }
 
@@ -119,42 +115,34 @@ function openEditModal(id) {
     modalTitle.textContent = "Modifica Classe";
     btnSave.textContent = "Aggiorna";
 
-    // Check if name matches standard pattern (Year+Section)
-    // If it's complex (e.g. "3A Informatica"), treat as manually edited so we don't overwrite it automatically
-    // unless the user changes year/section AND wants to reset it.
-    // Actually, simpler: just set it to true to be safe, user can edit name manually.
-    // BUT prompt asks for automation.
-    // Let's check: if name === year + section, then allowed to auto-update.
-    if (cls.name === `${cls.year}${cls.section}`) {
+    if (cls.nome === `${cls.anno}${cls.sezione}`) {
         isNameManuallyEdited = false;
     } else {
         isNameManuallyEdited = true;
     }
 
+    classForm.action = "/classe/modify";
+    classIdInput.value = id;
+
     // Fill fields
-    nameInput.value = cls.name;
-    yearInput.value = cls.year;
-    sectionInput.value = cls.section;
-    statusInput.value = cls.status;
+    nameInput.value = cls.nome;
+    yearInput.value = cls.anno;
+    sectionInput.value = cls.sezione;
+    statusInput.value = cls.stato;
 
     // Display existing dates immediately
-    createdAtDisplay.textContent = cls.createdAt;
-    updatedAtDisplay.textContent = cls.updatedAt;
+    createdAtDisplay.textContent = formatDate(cls.createdAt);
+    updatedAtDisplay.textContent = formatDate(cls.updatedAt);
 
     // Start updating them "real-time"
-    startDateUpdates(cls.rawCreatedAt); // Keep creation date static if we want, or simple update 'updatedAt' only?
-    // Requirement: "tranne data di creazione e data di update che verranno aggiornati in tempo reale"
-    // I will interpret this as: update current displayed time as "Now" for update date,
-    // but creation date should technically stay fixed if editing.
-    // However, the prompt says "inserire tutti i campi... tranne date... verranno aggiornati in tempo reale".
-    // For a new record, it makes sense they tick up. For edit, usually creation is fixed.
-    // I will make them BOTH tick to strictly follow "aggiornati in tempo reale" visual feedback requirement.
+    startDateUpdates(formatDate(cls.createdAt));
 
     showModal(formModal);
 }
 
 function openDeleteModal(id) {
     deleteId = id;
+    deleteClassIdInput.value = id;
     showModal(deleteModal);
 }
 
@@ -199,65 +187,10 @@ function stopDateUpdates() {
 
 addBtn.addEventListener('click', openAddModal);
 
-classForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const now = Date.now();
-
-    const clsData = {
-        nome: nameInput.value,
-        annoScolastico: yearInput.value,
-        sezione: sectionInput.value,
-        stato: statusInput.value,
-        updated_at: now
-    };
-
-    try {
-        let response;
-        if (editingId) {
-            // Update existing
-            const existingCls = classes.find(c => c.id === editingId);
-            clsData.id = editingId;
-            clsData.created_at = existingCls.rawCreatedAt || now;
-            response = await fetch(`${API_URL}/${editingId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(clsData)
-            });
-        } else {
-            // Create new
-            clsData.created_at = now;
-            response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(clsData)
-            });
-        }
-
-        if (!response.ok) throw new Error('Errore durante il salvataggio');
-
-        await loadClasses();
-        closeAllModals();
-    } catch (error) {
-        alert('Si è verificato un errore: ' + error.message);
-    }
-});
-
-btnConfirmDelete.addEventListener('click', async () => {
-    if (deleteId) {
-        try {
-            const response = await fetch(`${API_URL}/${deleteId}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) throw new Error('Errore durante l\'eliminazione');
-
-            await loadClasses();
-            closeAllModals();
-            deleteId = null;
-        } catch (error) {
-            alert('Errore durante l\'eliminazione: ' + error.message);
-        }
-    }
-});
+// Traditional form submission will happen automatically
+// due to method="POST" and action="..." in HTML.
+// We only keep the event listener if we want to do client-side validation,
+// but for now let's keep it simple as requested.
 
 // Close on backdrop click
 modalBackdrop.addEventListener('click', closeAllModals);

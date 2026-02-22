@@ -59,7 +59,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/css/**", "/images/**",  "/greeting", "/setcolor",
                                 "/images/**", "/webjars/**",
-                                "/h2-console/**", "/signin","/auth/register").permitAll()
+                                "/h2-console/**", "/signin","/auth/register", "/classe/**", "/classe", "/classe-data").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -75,7 +75,7 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/auth/register", "/login"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/auth/register", "/login", "/classe/**", "/classe", "/classe-data"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
