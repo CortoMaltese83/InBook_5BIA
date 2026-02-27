@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBook - Gestione Classi</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fleur+De+Leah&display=swap"
+          rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Bebas+Neue&family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/classManager.css">
+</head>
+
+<body class="particle-bg">
+<canvas id="particle-canvas"></canvas>
+
+<header class="header">
+    <div class="header-left">
+        <h1>GESTIONE CLASSI</h1>
+    </div>
+    <div class="header-right">
+        <div class="logo">
+            <img src="/images/InBook2.svg" alt="InBook Logo" width="32" height="32">
+            <span>InBook App</span>
+        </div>
+        <nav class="nav">
+            <a href="/docente" class="nav-link">Home</a>
+            <a href="/docente/classes" class="nav-link active">Classi</a>
+        </nav>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="main-container">
+    <div class="table-container">
+        <table class="class-table">
+            <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Anno</th>
+                <th>Sezione</th>
+                <th>Stato</th>
+                <th>Data Creazione</th>
+                <th>Data Aggiornamento</th>
+                <th>Azioni</th>
+            </tr>
+            </thead>
+            <tbody id="table-body">
+            <!-- Rows will be injected by JS -->
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Ciao Prof. Lombardi!! Massimo è stato qui  a fare questa parte di cod!  :D -->
+<!-- Modal Backdrop -->
+<div class="modal-backdrop" id="modal-backdrop"></div>
+
+<script src="/js/classManager.js"></script>
+</body>
+
+</html>
