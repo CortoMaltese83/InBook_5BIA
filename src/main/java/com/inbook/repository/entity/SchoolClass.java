@@ -16,7 +16,7 @@ public class SchoolClass {
     @Column(name = "anno_scolastico", nullable = false, length = 2)
     private String anno;
 
-    @Column(nullable = false,length = 3)
+    @Column(nullable = false,length = 10)
     private String sezione;
 
     @Column(nullable = false,length = 10) //"ATTIVA" O "ARCHIVIATA"

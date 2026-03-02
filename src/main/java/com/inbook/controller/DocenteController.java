@@ -1,6 +1,7 @@
 package com.inbook.controller;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
@@ -10,6 +11,11 @@ public class DocenteController {
         return "homepageDocenti";
     }
 
+    @GetMapping("/docente/view")
+    public String DocenteView() {
+
+        return "classManagerDocenti";
+    }
     @GetMapping("/docente/classes")
     public String classManager() {
         return "classManagerDocenti";
