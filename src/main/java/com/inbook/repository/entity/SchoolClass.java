@@ -28,6 +28,9 @@ public class SchoolClass {
     @Column(nullable = false)
     private Long updated_at;
 
+    @ManyToOne(optional = false)
+    private Long idDocente;
+
     public SchoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
 
     public SchoolClass(Long id, String nome, String anno, String sezione, String stato, Long created_at, Long updated_at) {
