@@ -28,7 +28,7 @@ public class DbUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public AppUser RegisterUser (String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
+    public AppUser registerUser(String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
         AppUser u = new AppUser();
 
         u.setUsername(username);
