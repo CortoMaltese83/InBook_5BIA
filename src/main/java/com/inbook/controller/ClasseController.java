@@ -2,8 +2,6 @@ package com.inbook.controller;
 
 import com.inbook.repository.entity.SchoolClass;
 import com.inbook.service.ClasseService;
-import com.inbook.service.DbUserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,17 +16,19 @@ import java.util.Map;
 
 @Controller
 public class ClasseController{
+
     private final ClasseService service;
 
     public ClasseController(ClasseService service) {
         this.service = service;
     }
+
     @PostMapping("/classe")
     public String addClass(@RequestParam(value = "nome", required = false) String nome,
                            @RequestParam("anno") String anno,
                            @RequestParam("sezione") String sezione,
                            @RequestParam("stato") String stato) {
-        service.AddClass(nome, anno, sezione, stato, null, null);
+        service.addClass(nome, anno, sezione, stato, null, null);
         return "redirect:/admin/classes";
     }
 
@@ -93,3 +93,4 @@ public class ClasseController{
     }
 
 }
+

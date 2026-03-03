@@ -21,7 +21,7 @@ public class RegisterController {
   //  @ResponseBody
     public String Register(Docente d){
         try{
-            service.RegisterUser(
+            service.registerUser(
                     d.getEmail(),
                     passwordEncoder.encode(d.getPassword()),
                     d.getUsername(),

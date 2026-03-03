@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class subjectService {
+public class SubjectService {
     private final SubjectRepository subjectRepository;
 
-    public subjectService(SubjectRepository subjectRepository) {
+    public SubjectService(SubjectRepository subjectRepository) {
         this.subjectRepository = subjectRepository;
     }
 

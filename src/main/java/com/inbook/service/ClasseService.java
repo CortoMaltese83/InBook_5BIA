@@ -14,7 +14,7 @@ public class ClasseService {
         this.repo = repo;
     }
 
-    public SchoolClass AddClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at) {
+    public SchoolClass addClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at) {
 
         SchoolClass c = new SchoolClass();
         c.setNome(anno + sezione);
@@ -36,6 +36,7 @@ public class ClasseService {
         c.setUpdated_at(update_at != null ? update_at : System.currentTimeMillis());
         return repo.save(c);
     }
+
     public void deleteClass(Long id){
         if (repo.existsById(id)){
             repo.deleteById(id);
