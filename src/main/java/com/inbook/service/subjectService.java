@@ -16,7 +16,7 @@ public class subjectService {
         this.subjectRepository = subjectRepository;
     }
 
-    public Subject addSubject(SchoolClass classe, AppUser docente, String nomeMateria, Long created_at, Long updated_at) {
+    public Subject loadMateria(SchoolClass classe, AppUser docente, String nomeMateria, Long created_at, Long updated_at) {
         Subject s= new Subject();
         s.setClasse(classe);
         s.setDocente(docente);
@@ -27,7 +27,7 @@ public class subjectService {
     }
 
     public Subject modifySubject(Long id,SchoolClass classe,AppUser docente ,String nomeMateria, Long updated_at) {
-        Subject s= new Subject();
+        Subject s= subjectRepository.findById(id).orElseThrow(() -> new RuntimeException("classe non trovata"));
         s.setClasse(classe);
         s.setDocente(docente);
         s.setNomeMateria(nomeMateria);
@@ -47,4 +47,6 @@ public class subjectService {
     public List<Subject> getAllSubjects() {
         return subjectRepository.findAll();
     }
+
+
 }
