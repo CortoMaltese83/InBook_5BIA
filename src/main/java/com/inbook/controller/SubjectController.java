@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.lang.reflect.Method;
+import java.util.Objects;
+
 @Controller
 public class SubjectController {
 
@@ -20,6 +23,52 @@ public class SubjectController {
 
     public SubjectController(SubjectService subjectService) {
         this.subjectService = subjectService;
+    }
+
+
+    private static Object tryInvoke(Object target, String methodName) {
+        if (target == null) return null;
+        try {
+            Method m = target.getClass().getMethod(methodName);
+            return m.invoke(target);
+        } catch (Exception ignore) {
+            return null;
+        }
+    }
+
+    private static String asTrimmedString(Object v) {
+        if (v == null) return null;
+        String s = String.valueOf(v).trim();
+        return s.isBlank() ? null : s;
+    }
+
+    private static String buildClasseLabel(Object classe) {
+        if (classe == null) return null;
+
+        // Try common getter names (keep reflection-based to avoid compilation issues if a getter doesn't exist)
+        String nome = asTrimmedString(tryInvoke(classe, "getNome"));
+        String sezione = asTrimmedString(tryInvoke(classe, "getSezione"));
+        String annoScolastico = asTrimmedString(tryInvoke(classe, "getAnnoScolastico"));
+        if (annoScolastico == null) {
+            annoScolastico = asTrimmedString(tryInvoke(classe, "getAnno_scolastico"));
+        }
+        if (annoScolastico == null) {
+            annoScolastico = asTrimmedString(tryInvoke(classe, "getAnno"));
+        }
+
+        // Compose label: e.g. "3A 2025/26 A" depending on which parts exist
+        StringBuilder sb = new StringBuilder();
+        if (nome != null) sb.append(nome);
+        if (annoScolastico != null) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(annoScolastico);
+        }
+        if (sezione != null) {
+            if (sb.length() > 0) sb.append(' ');
+            sb.append(sezione);
+        }
+        String label = sb.toString().trim();
+        return label.isBlank() ? null : label;
     }
 
 
@@ -52,6 +101,26 @@ public class SubjectController {
 
                         // FK: classe_id
                         map.put("classe_id", (s.getClasse() != null ? s.getClasse().getId() : null));
+
+                        // Optional: class display fields (so frontend can show selected class name)
+                        if (s.getClasse() != null) {
+                            String classeNome = asTrimmedString(tryInvoke(s.getClasse(), "getNome"));
+                            String classeSezione = asTrimmedString(tryInvoke(s.getClasse(), "getSezione"));
+                            String classeAnnoScolastico = asTrimmedString(tryInvoke(s.getClasse(), "getAnnoScolastico"));
+                            if (classeAnnoScolastico == null) {
+                                classeAnnoScolastico = asTrimmedString(tryInvoke(s.getClasse(), "getAnno_scolastico"));
+                            }
+                            if (classeAnnoScolastico == null) {
+                                classeAnnoScolastico = asTrimmedString(tryInvoke(s.getClasse(), "getAnno"));
+                            }
+
+                            if (classeNome != null) map.put("classe_nome", classeNome);
+                            if (classeSezione != null) map.put("classe_sezione", classeSezione);
+                            if (classeAnnoScolastico != null) map.put("classe_anno_scolastico", classeAnnoScolastico);
+
+                            String classeLabel = buildClasseLabel(s.getClasse());
+                            if (classeLabel != null) map.put("classe_label", classeLabel);
+                        }
 
                         // FK: docente_id (+ optional teacher display)
                         map.put("docente_id", (s.getDocente() != null ? s.getDocente().getId() : null));

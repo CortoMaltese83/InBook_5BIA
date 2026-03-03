@@ -42,8 +42,10 @@
     <main class="main-container">
         <div class="toolbar">
             <div class="toolbar-left">
-                <label for="class-select" class="toolbar-label">Classe</label>
-                <select id="class-select" class="toolbar-select">
+                <label class="toolbar-label">Classe</label>
+                <span id="class-selected" class="toolbar-selected">-</span>
+                <!-- Kept for compatibility (JS may populate it), but the page now shows the class via #class-selected -->
+                <select id="class-select" class="toolbar-select" aria-hidden="true" tabindex="-1" style="display:none;">
                     <!-- Options injected elsewhere (classes JS) -->
                 </select>
             </div>

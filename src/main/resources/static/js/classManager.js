@@ -82,6 +82,15 @@ function renderTable() {
     classes.forEach((cls, index) => {
         const tr = document.createElement('tr');
         tr.style.animationDelay = `${index * 0.05}s`;
+
+        // Row click => go to subjects list for this class
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', (e) => {
+            // Do not navigate when clicking action buttons/icons
+            if (e.target && e.target.closest && e.target.closest('button')) return;
+            window.location.href = `/docente/subjects?classeId=${encodeURIComponent(cls.id)}`;
+        });
+
         tr.innerHTML = `
             <td><strong>${cls.nome}</strong></td>
             <td>${cls.anno}</td>

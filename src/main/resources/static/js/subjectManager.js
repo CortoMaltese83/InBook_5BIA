@@ -11,6 +11,7 @@ const SUBJECTS_API_URL = '/materia-data';
 // ---- State ----
 let subjects = [];
 let selectedClassId = null;
+let selectedClassLabel = null;
 
 let editingId = null;
 let deleteId = null;
@@ -18,7 +19,7 @@ let dateInterval = null;
 
 // ---- DOM Elements ----
 // (HTML required IDs)
-// Class selector (add it in HTML): <select id="class-select"></select>
+// Class selector (optional now; class comes from URL): <select id="class-select"></select>
 const classSelect = document.getElementById('class-select');
 
 // Table
@@ -71,16 +72,42 @@ const escapeHtml = (str) => {
         .replaceAll("'", '&#039;');
 };
 
+// IMPORTANT: class id is fixed by URL query string (?classeId=...)
+// We do NOT read from classSelect anymore.
 function getSelectedClassId() {
-    if (classSelect) {
-        const v = classSelect.value;
-        return v ? Number(v) : null;
-    }
     return selectedClassId;
 }
 
 function buildSubjectsUrl(classeId) {
     return `${SUBJECTS_API_URL}?classeId=${encodeURIComponent(classeId)}`;
+}
+
+function getSelectedClassLabelFromSelect(clsId) {
+    if (!classSelect) return null;
+    const opt = classSelect.querySelector(`option[value="${CSS.escape(String(clsId))}"]`);
+    if (!opt) return null;
+    const txt = (opt.textContent || '').trim();
+    return txt || null;
+}
+
+function updateSelectedClassDisplay() {
+    const el = document.getElementById('class-selected');
+    if (!el) return;
+
+    const clsId = getSelectedClassId();
+    if (!clsId) {
+        el.textContent = '-';
+        return;
+    }
+
+    // Prefer label coming from API/controller
+    const lbl = (selectedClassLabel || '').trim();
+    if (lbl) {
+        el.textContent = lbl;
+        return;
+    }
+
+    el.textContent = '-';
 }
 
 
@@ -94,6 +121,20 @@ async function loadSubjects(classeId) {
         if (!response.ok) throw new Error(`Errore nel caricamento delle materie (Status: ${response.status})`);
 
         const data = await response.json();
+        // Extract class label from API response.
+        // Requirement: show ONLY anno + sezione (e.g. "4 BIA"), never the class "nome" (e.g. "4BIA").
+        selectedClassLabel = null;
+        if (Array.isArray(data) && data.length > 0) {
+            const first = data[0];
+
+            const anno = (first.classe_anno_scolastico ?? first.classeAnnoScolastico ?? first.anno ?? '').toString().trim();
+            const sezione = (first.classe_sezione ?? first.classeSezione ?? first.sezione ?? '').toString().trim();
+
+            const parts = [anno, sezione].filter(Boolean);
+            if (parts.length) {
+                selectedClassLabel = parts.join(' ');
+            }
+        }
         // Subject entity:
         // id, classe_id, docente_id, nome_materia, created_at, updated_at
         subjects = data.map(s => ({
@@ -107,6 +148,7 @@ async function loadSubjects(classeId) {
             updatedAt: s.updated_at ?? s.updatedAt
         }));
 
+        updateSelectedClassDisplay();
         renderTable();
     } catch (error) {
         console.error('Error:', error);
@@ -124,7 +166,7 @@ function renderTable() {
     const clsId = getSelectedClassId();
 
     if (!clsId) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">Seleziona una classe per vedere le materie.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">Classe non specificata. Apri questa pagina passando <code>?classeId=...</code> nell\\\'URL.</td></tr>';
         return;
     }
 
@@ -166,7 +208,7 @@ function openAddModal() {
 
     const clsId = getSelectedClassId();
     if (!clsId) {
-        alert('Seleziona prima una classe.');
+        alert('Classe non specificata nell’URL (?classeId=...).');
         return;
     }
 
@@ -268,28 +310,35 @@ if (addBtn) addBtn.addEventListener('click', openAddModal);
 
 if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
 
-if (classSelect) {
-    classSelect.addEventListener('change', async () => {
-        const clsId = getSelectedClassId();
-        selectedClassId = clsId;
-        if (clsId) await loadSubjects(clsId);
-        else {
-            subjects = [];
-            renderTable();
-        }
-    });
-}
-
-// Initial load: assume the class selector (or another component) is already populated elsewhere
+// Initial load: the class is provided by the query string (?classeId=...)
 (async () => {
-    const clsId = getSelectedClassId();
-    if (clsId) {
-        await loadSubjects(clsId);
-    } else {
-        // If no class is selected yet, render empty state
+    const params = new URLSearchParams(window.location.search);
+    const paramClassIdRaw = params.get('classeId');
+    const paramClassId = paramClassIdRaw ? Number(paramClassIdRaw) : null;
+
+    // Hide/disable the class selector if it exists (class is fixed by URL)
+    if (classSelect) {
+        classSelect.disabled = true;
+        classSelect.style.display = 'none';
+
+        // If options are populated asynchronously elsewhere, update the label when they appear
+        const observer = new MutationObserver(() => updateSelectedClassDisplay());
+        observer.observe(classSelect, { childList: true, subtree: true });
+        setTimeout(() => observer.disconnect(), 5000);
+    }
+
+    if (!paramClassId || !Number.isFinite(paramClassId)) {
+        selectedClassId = null;
+        selectedClassLabel = null;
         subjects = [];
         renderTable();
+        return;
     }
+
+    selectedClassId = paramClassId;
+    selectedClassLabel = null;
+    updateSelectedClassDisplay();
+    await loadSubjects(selectedClassId);
 })();
 
 

@@ -1,8 +1,9 @@
 package com.inbook.repository.entity;
 import jakarta.persistence.*;
+import com.inbook.repository.entity.AppUser;
 
 @Entity
-@Table(name = "Classe")
+@Table(name = "classe")
 public class SchoolClass {
 
     @Id
@@ -28,12 +29,15 @@ public class SchoolClass {
     @Column(nullable = false)
     private Long updated_at;
 
-    @ManyToOne(optional = false)
-    private Long idDocente;
+    // NOTE: nullable during schema migration to avoid failing on existing rows.
+    // Once existing data is backfilled, you can switch back to optional=false / nullable=false.
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "docente_id", nullable = true)
+    private AppUser docente;
 
     public SchoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
 
-    public SchoolClass(Long id, String nome, String anno, String sezione, String stato, Long created_at, Long updated_at) {
+    public SchoolClass(Long id, String nome, String anno, String sezione, String stato, Long created_at, Long updated_at, AppUser docente) {
         this.id = id;
         this.nome = nome;
         this.anno = anno;
@@ -41,6 +45,7 @@ public class SchoolClass {
         this.stato = stato;
         this.created_at = created_at;
         this.updated_at = updated_at;
+        this.docente = docente;
     }
 
     //GETTER
@@ -55,6 +60,7 @@ public class SchoolClass {
     public Long getUpdated_at() {
         return updated_at;
     }
+    public AppUser getDocente() { return docente; }
 
     //SETTER
     public void setId(Long id) {this.id = id;}
@@ -64,4 +70,5 @@ public class SchoolClass {
     public void setStato(String stato) {this.stato = stato;}
     public void setCreated_at(Long created_at) {this.created_at = created_at;}
     public void setUpdated_at(Long updated_at) {this.updated_at = updated_at;}
+    public void setDocente(AppUser docente) { this.docente = docente; }
 }
