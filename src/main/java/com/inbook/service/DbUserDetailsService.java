@@ -35,7 +35,7 @@ public class DbUserDetailsService implements UserDetailsService {
         u.setPasswordHash(passwordHash);
         u.setName(name);
         u.setSurname(surname);
-        u.setRoles("TYPE_DOCENTE"); //registra di default come docente
+        u.setRoles("ROLE_DOCENTE"); //registra di default come docente
         u.setEnabled(enabled);
         u.setEmail(email);
 
