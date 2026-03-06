@@ -1,10 +1,14 @@
 package com.inbook.controller;
 
 
+import com.inbook.repository.entity.AppUser;
+import com.inbook.repository.entity.SchoolClass;
 import com.inbook.repository.entity.Subject;
 import com.inbook.service.SubjectService;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -71,10 +75,37 @@ public class SubjectController {
         return label.isBlank() ? null : label;
     }
 
+    @PostMapping("/docente/subjects/add")
+    public String addsubjects(@RequestParam("classe") SchoolClass classe,@RequestParam("docente") AppUser docente,@RequestParam("nome") String nomeMateria){
+        subjectService.loadMateria(classe,docente,nomeMateria,null,null);
+        return "redirect:/docente/subjects";
+    }
+
 
     @GetMapping("/docente/subjects")
     public String subjectManager() {
         return "subjectManager";
+    }
+
+    @PostMapping("/docente/subjects/edit")
+    public String editSubject(@RequestParam("id") Long id,
+                              @RequestParam("classe") SchoolClass classe,
+                              @RequestParam("docente")AppUser docente,
+                              @RequestParam("nomeMateria") String nomeMateria) {
+        subjectService.modifySubject(id,classe,docente,nomeMateria,null);
+        return "redirect:/docente/subjects";
+    }
+
+
+    @PostMapping("/docente/subjects/delete")
+    public String deleteSubject(@RequestParam("id") Long id){
+        try {
+            subjectService.deleteSubject(id);
+            return "redirect:/docente/subjects";
+        }
+        catch (Exception e) {
+            throw  new RuntimeException(e);
+        }
     }
 
     @GetMapping("/materia-data")

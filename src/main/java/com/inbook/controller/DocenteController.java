@@ -20,4 +20,7 @@ public class DocenteController {
     public String classManager() {
         return "classManagerDocenti";
     }
+
+    @GetMapping("/docente/subjects")
+    public String subjectsManager() {return "subjectManager";}
 }

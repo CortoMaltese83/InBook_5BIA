@@ -16,8 +16,5 @@ public class AdminController {
         return "classManager";
     }
 
-    @GetMapping("/admin/materias")
-    public String materias() {
-        return "materias";
-    }
+
 }
