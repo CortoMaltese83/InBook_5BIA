@@ -1,5 +1,6 @@
 let classes = [];
-const API_URL = '/docente/view';
+// Cambia l'URL per puntare al nuovo endpoint API
+const API_URL = '/api/docente/classes';  // Modificato!
 const tableBody = document.getElementById('table-body');
 
 async function loadClasses() {
@@ -36,7 +37,6 @@ async function loadClasses() {
 }
 
 function renderTable() {
-
     tableBody.innerHTML = '';
 
     if (classes.length === 0) {
@@ -57,8 +57,8 @@ function renderTable() {
             <td>${cls.anno}</td>
             <td>${cls.sezione}</td>
             <td>${cls.stato}</td>
-            <td>${cls.createdAt}</td>
-            <td>${cls.updatedAt}</td>
+            <td>${new Date(cls.createdAt).toLocaleDateString()}</td>
+            <td>${new Date(cls.updatedAt).toLocaleDateString()}</td>
         `;
 
         tableBody.appendChild(tr);
