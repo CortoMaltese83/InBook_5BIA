@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -25,16 +26,19 @@ public class DocenteController {
         return "homepageDocenti";
     }
 
-    @GetMapping("/api/docente/classes")
-    @ResponseBody
-    public ResponseEntity<List<SchoolClass>> getClassiDocente(
-            @AuthenticationPrincipal AppUser docente) {
+    @GetMapping("/docente/classes")
+    public String classManager(@AuthenticationPrincipal AppUser docente, Model model) {
+
+        List<SchoolClass> classi;
+
         if (docente == null) {
-            return ResponseEntity.ok(List.of());
+            classi = List.of();
+        } else {
+            classi = service.getClassiByDocenteId(docente.getId());
         }
 
-        Long docenteId = docente.getId();
-        List<SchoolClass> classi = service.getClassiByDocenteId(docenteId);
-        return ResponseEntity.ok(classi);
+        model.addAttribute("classes", classi);
+
+        return "classManagerDocenti";
     }
 }
