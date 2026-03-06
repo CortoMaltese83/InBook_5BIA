@@ -82,7 +82,7 @@ public class SubjectController {
     public List<Map<String, Object>> viewSubjects(@RequestParam(name = "classeId", required = false) Long classeId) {
         try {
             System.out.println("DEBUG: Fetching subjects from service...");
-            List<Subject> subjects = subjectService.getAllSubjects();
+            List<Subject> subjects = subjectService.getAllSubjects(classeId);
             System.out.println("DEBUG: Found " + (subjects != null ? subjects.size() : "null") + " subjects");
             List<Map<String, Object>> response = new ArrayList<>();
             if (subjects != null) {

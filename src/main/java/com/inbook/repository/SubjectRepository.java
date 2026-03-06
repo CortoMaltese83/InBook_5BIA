@@ -9,4 +9,5 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
 
     List<Subject> findByNomeMateria(String nomeMateria);
 
+    List<Subject> findAllById(Long classeId);
 }
