@@ -38,7 +38,9 @@ public class SecurityConfig {
         http
             .securityMatcher("/api/**")
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().hasRole("API")
+                    .requestMatchers("/api/docente/classes").permitAll()
+
+                    .anyRequest().hasRole("API")
             )
             .httpBasic(Customizer.withDefaults())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
