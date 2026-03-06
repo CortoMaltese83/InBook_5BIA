@@ -38,8 +38,6 @@ public class SecurityConfig {
         http
             .securityMatcher("/api/**")
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/docente/classes").permitAll()
-
                     .anyRequest().hasRole("API")
             )
             .httpBasic(Customizer.withDefaults())
