@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
@@ -19,12 +19,13 @@
     <link rel="stylesheet" href="/css/classManager.css">
 </head>
 
-<body class="particle-bg">
+<body class="particle-bg" th:attr="data-can-manage=${canManageClasses}">
     <canvas id="particle-canvas"></canvas>
 
     <header class="header">
         <div class="header-left">
             <h1>GESTIONE CLASSI</h1>
+            <span class="role-badge" th:text="${canManageClasses} ? 'ADMIN' : 'DOCENTE'"></span>
         </div>
         <div class="header-right">
             <div class="logo">
@@ -32,8 +33,15 @@
                 <span>InBook App</span>
             </div>
             <nav class="nav">
-                <a href="/admin" class="nav-link">Home</a>
-                <a href="/admin/classes" class="nav-link active">Classi</a>
+                <a href="/admin/classes" class="nav-link">Home</a>
+
+                <form class="logout-form" th:action="@{/logout}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="nav-link logout-btn" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Logout
+                    </button>
+                </form>
             </nav>
         </div>
     </header>
@@ -50,7 +58,7 @@
                         <th>Stato</th>
                         <th>Data Creazione</th>
                         <th>Data Aggiornamento</th>
-                        <th>Azioni</th>
+                        <th th:if="${canManageClasses}">Azioni</th>
                     </tr>
                 </thead>
                 <tbody id="table-body">
@@ -61,7 +69,7 @@
     </main>
 
     <!-- Add Button -->
-    <button class="add-btn" id="add-btn" title="Aggiungi Classe">
+    <button class="add-btn" id="add-btn" title="Aggiungi Classe" th:if="${canManageClasses}">
         <i class="fa-solid fa-plus"></i> Aggiungi
     </button>
 
@@ -69,7 +77,7 @@
     <div class="modal-backdrop" id="modal-backdrop"></div>
 
     <!-- Add/Edit Modal -->
-    <div class="modal" id="form-modal">
+    <div class="modal" id="form-modal" th:if="${canManageClasses}">
         <h2 id="modal-title">Aggiungi Classe</h2>
         <form id="class-form" method="POST">
             <input type="hidden" id="class-id" name="id">
@@ -115,7 +123,7 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div class="modal" id="delete-modal">
+    <div class="modal" id="delete-modal" th:if="${canManageClasses}">
         <h2>Elimina Classe</h2>
         <p>Sei sicuro di voler eliminare questa riga? L'operazione non è reversibile.</p>
         <form id="delete-form" action="/classe/delete" method="POST">
@@ -127,6 +135,9 @@
         </form>
     </div>
 
+    <script th:inline="javascript">
+        window.CAN_MANAGE_CLASSES = /*[[${canManageClasses}]]*/ false;
+    </script>
     <script src="/js/classManager.js"></script>
 </body>
 

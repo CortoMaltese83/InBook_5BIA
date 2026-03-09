@@ -57,9 +57,19 @@ public class SecurityConfig {
     SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/css/**", "/images/**",  "/greeting", "/setcolor",
-                                "/images/**", "/webjars/**",
-                                "/h2-console/**", "/signin","/auth/register", "/classe/**", "/classe", "/classe-data").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/css/**",
+                                "/images/**",
+                                "/greeting",
+                                "/setcolor",
+                                "/webjars/**",
+                                "/h2-console/**",
+                                "/signin",
+                                "/auth/register",
+                                "/login"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -75,7 +85,17 @@ public class SecurityConfig {
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 )
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/auth/register", "/login", "/classe/**", "/classe", "/classe-data"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers(
+                        "/h2-console/**",
+                        "/auth/register",
+                        "/login",
+                        "/classe/**",
+                        "/classe",
+                        "/classe-data",
+                        "/subjects/**",
+                        "/subjects",
+                        "/materia-data"
+                ))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

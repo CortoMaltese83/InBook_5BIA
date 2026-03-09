@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
@@ -25,6 +25,7 @@
     <header class="header">
         <div class="header-left">
             <h1>GESTIONE DELLE MATERIE</h1>
+            <span class="role-badge" th:text="${canManageClasses} ? 'ADMIN' : 'DOCENTE'"></span>
         </div>
         <div class="header-right">
             <div class="logo">
@@ -32,8 +33,15 @@
                 <span>InBook App</span>
             </div>
             <nav class="nav">
-                <a href="/admin" class="nav-link">Home</a>
-                <a href="/docente/subjects" class="nav-link active">Materie</a>
+                <a href="/admin/classes" class="nav-link">Home</a>
+
+                <form class="logout-form" th:action="@{/logout}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                    <button type="submit" class="nav-link logout-btn" title="Logout">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        Logout
+                    </button>
+                </form>
             </nav>
         </div>
     </header>
@@ -81,6 +89,7 @@
         <h2 id="modal-title">Aggiungi Materia</h2>
         <form id="subject-form" method="POST">
             <input type="hidden" id="subject-id" name="id">
+            <input type="hidden" id="classe-id" name="classeId">
             <div class="form-group">
                 <label for="nome-materia">Nome Materia</label>
                 <input type="text" id="nome-materia" name="nomeMateria" required placeholder="Es. Matematica">
@@ -106,8 +115,9 @@
     <div class="modal" id="delete-modal">
         <h2>Elimina Materia</h2>
         <p>Sei sicuro di voler eliminare questa riga? L'operazione non è reversibile.</p>
-        <form id="delete-form" action="/materia/delete" method="POST">
+        <form id="delete-form" action="/subjects/delete" method="POST">
             <input type="hidden" id="delete-subject-id" name="id">
+            <input type="hidden" id="delete-classe-id" name="classeId">
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" onclick="closeAllModals()">Annulla</button>
                 <button type="submit" class="btn-confirm btn-delete" id="btn-confirm-delete">Conferma</button>

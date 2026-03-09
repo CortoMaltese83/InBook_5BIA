@@ -5,8 +5,8 @@ import com.inbook.repository.entity.AppUser;
 import com.inbook.repository.entity.SchoolClass;
 import com.inbook.repository.entity.Subject;
 import com.inbook.service.SubjectService;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,6 +19,7 @@ import java.util.Map;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
+import java.security.Principal;
 
 @Controller
 public class SubjectController {
@@ -29,6 +30,19 @@ public class SubjectController {
         this.subjectService = subjectService;
     }
 
+    private boolean isAdminUser(AppUser user) {
+        if (user == null) return false;
+        try {
+            Object rolesObj = user.getRoles();
+            if (rolesObj == null) return false;
+
+            String up = String.valueOf(rolesObj).toUpperCase();
+
+            return up.contains("TYPE_ADMIN");
+        } catch (Exception ignore) {
+        }
+        return false;
+    }
 
     private static Object tryInvoke(Object target, String methodName) {
         if (target == null) return null;
@@ -75,36 +89,46 @@ public class SubjectController {
         return label.isBlank() ? null : label;
     }
 
-    @PostMapping("/docente/subjects/add")
-    public String addsubjects(@RequestParam("classe") SchoolClass classe,@RequestParam("docente") AppUser docente,@RequestParam("nome") String nomeMateria){
-        subjectService.loadMateria(classe,docente,nomeMateria,null,null);
-        return "redirect:/docente/subjects";
-    }
-
-
-    @GetMapping("/docente/subjects")
-    public String subjectManager() {
+    @GetMapping("/subjects")
+    public String subjectManager(Model model, Principal principal) {
+        AppUser user = subjectService.requireLoggedUser(principal);
+        boolean canManage = isAdminUser(user);
+        model.addAttribute("canManageClasses", canManage);
         return "subjectManager";
     }
 
-    @PostMapping("/docente/subjects/edit")
-    public String editSubject(@RequestParam("id") Long id,
-                              @RequestParam("classe") SchoolClass classe,
-                              @RequestParam("docente")AppUser docente,
-                              @RequestParam("nomeMateria") String nomeMateria) {
-        subjectService.modifySubject(id,classe,docente,nomeMateria,null);
-        return "redirect:/docente/subjects";
+    @PostMapping("/subjects/add")
+    public String addsubjects(@RequestParam("classeId") Long classeId,
+                              @RequestParam("nomeMateria") String nomeMateria,
+                              Principal principal) {
+        SchoolClass classe = subjectService.requireClass(classeId);
+        AppUser docente = subjectService.requireLoggedUser(principal);
+        subjectService.loadMateria(classe, docente, nomeMateria, null, null);
+        return "redirect:/subjects?classeId=" + classeId;
     }
 
+    @PostMapping("/subjects/edit")
+    public String editSubject(@RequestParam("id") Long id,
+                              @RequestParam("classeId") Long classeId,
+                              @RequestParam("nomeMateria") String nomeMateria,
+                              Principal principal) {
+        SchoolClass classe = subjectService.requireClass(classeId);
+        AppUser docente = subjectService.requireLoggedUser(principal);
+        subjectService.modifySubject(id, classe, docente, nomeMateria, null);
+        return "redirect:/subjects?classeId=" + classeId;
+    }
 
-    @PostMapping("/docente/subjects/delete")
-    public String deleteSubject(@RequestParam("id") Long id){
+    @PostMapping("/subjects/delete")
+    public String deleteSubject(@RequestParam("id") Long id,
+                                @RequestParam(name = "classeId", required = false) Long classeId) {
         try {
             subjectService.deleteSubject(id);
-            return "redirect:/docente/subjects";
-        }
-        catch (Exception e) {
-            throw  new RuntimeException(e);
+            if (classeId != null) {
+                return "redirect:/subjects?classeId=" + classeId;
+            }
+            return "redirect:/subjects";
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -197,4 +221,3 @@ public class SubjectController {
         }
     }
 }
-

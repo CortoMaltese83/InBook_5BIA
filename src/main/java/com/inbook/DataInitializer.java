@@ -20,7 +20,7 @@ public class DataInitializer {
                         "admin0",
                         "ad0",
                         "admin",
-                        "ROLE_ADMIN,ROLE_USER",
+                        "TYPE_ADMIN",
                         true
                 ));
             }

@@ -8,9 +8,18 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+
+import java.security.Principal;
+
 @Service
 public class SubjectService {
     private final SubjectRepository subjectRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public SubjectService(SubjectRepository subjectRepository) {
         this.subjectRepository = subjectRepository;
@@ -45,8 +54,29 @@ public class SubjectService {
     }
 
     public List<Subject> getAllSubjects(Long classeId) {
-        return subjectRepository.findAllById(classeId);
+        return subjectRepository.findByClasse_Id(classeId);
     }
 
 
+    public SchoolClass requireClass(Long classeId) {
+        if (classeId == null) throw new IllegalArgumentException("classeId mancante");
+        SchoolClass cls = entityManager.find(SchoolClass.class, classeId);
+        if (cls == null) throw new IllegalArgumentException("Classe non trovata: " + classeId);
+        return cls;
+    }
+
+    public AppUser requireLoggedUser(Principal principal) {
+        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+            throw new IllegalArgumentException("Utente non autenticato");
+        }
+        String username = principal.getName();
+
+        TypedQuery<AppUser> q = entityManager.createQuery(
+                "select u from AppUser u where u.username = :username", AppUser.class);
+        q.setParameter("username", username);
+
+        List<AppUser> res = q.getResultList();
+        if (res.isEmpty()) throw new IllegalArgumentException("Utente non trovato: " + username);
+        return res.get(0);
+    }
 }

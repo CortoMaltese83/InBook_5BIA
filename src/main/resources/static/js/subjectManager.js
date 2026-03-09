@@ -44,8 +44,6 @@ const deleteSubjectIdInput = document.getElementById('delete-subject-id');
 
 // Inputs (rename in HTML)
 const nomeMateriaInput = document.getElementById('nome-materia');
-// Optional admin-only (can be absent): id="docente-id"
-const docenteIdInput = document.getElementById('docente-id');
 
 // Displays
 const createdAtDisplay = document.getElementById('created-at-display');
@@ -82,13 +80,6 @@ function buildSubjectsUrl(classeId) {
     return `${SUBJECTS_API_URL}?classeId=${encodeURIComponent(classeId)}`;
 }
 
-function getSelectedClassLabelFromSelect(clsId) {
-    if (!classSelect) return null;
-    const opt = classSelect.querySelector(`option[value="${CSS.escape(String(clsId))}"]`);
-    if (!opt) return null;
-    const txt = (opt.textContent || '').trim();
-    return txt || null;
-}
 
 function updateSelectedClassDisplay() {
     const el = document.getElementById('class-selected');
@@ -215,14 +206,16 @@ function openAddModal() {
     modalTitle.textContent = 'Aggiungi Materia';
     btnSave.textContent = 'Aggiungi';
 
-    // POST create (adegua se differente)
-    if (subjectForm) subjectForm.action = '/materia';
+    // POST create (controller: /subjects/add)
+    if (subjectForm) subjectForm.action = '/subjects/add';
 
     if (subjectIdInput) subjectIdInput.value = '';
     if (nomeMateriaInput) nomeMateriaInput.value = '';
 
-    // Admin-only optional field
-    if (docenteIdInput) docenteIdInput.value = docenteIdInput.value ?? '';
+
+    // Controller expects classeId
+    const classeIdInput = document.getElementById('classe-id');
+    if (classeIdInput) classeIdInput.value = String(clsId);
 
     // Dates display
     if (createdAtDisplay) createdAtDisplay.textContent = '';
@@ -241,15 +234,15 @@ function openEditModal(id) {
     modalTitle.textContent = 'Modifica Materia';
     btnSave.textContent = 'Aggiorna';
 
-    // POST update (adegua se differente)
-    if (subjectForm) subjectForm.action = '/materia/modify';
+    // POST update (controller: /subjects/edit)
+    if (subjectForm) subjectForm.action = '/subjects/edit';
 
     if (subjectIdInput) subjectIdInput.value = String(id);
     if (nomeMateriaInput) nomeMateriaInput.value = s.nomeMateria ?? '';
 
-    if (docenteIdInput) {
-        docenteIdInput.value = s.docenteId ? String(s.docenteId) : (docenteIdInput.value ?? '');
-    }
+    // Controller expects classeId
+    const classeIdInput = document.getElementById('classe-id');
+    if (classeIdInput) classeIdInput.value = String(getSelectedClassId() || s.classeId || '');
 
     if (createdAtDisplay) createdAtDisplay.textContent = s.createdAt ? formatDate(s.createdAt) : '';
     if (updatedAtDisplay) updatedAtDisplay.textContent = s.updatedAt ? formatDate(s.updatedAt) : '';
@@ -261,6 +254,8 @@ function openEditModal(id) {
 function openDeleteModal(id) {
     deleteId = id;
     if (deleteSubjectIdInput) deleteSubjectIdInput.value = String(id);
+    const deleteClasseIdInput = document.getElementById('delete-classe-id');
+    if (deleteClasseIdInput) deleteClasseIdInput.value = String(getSelectedClassId() || '');
     showModal(deleteModal);
 }
 

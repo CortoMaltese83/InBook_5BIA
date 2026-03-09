@@ -14,9 +14,6 @@ public class LoginController {
 
     @GetMapping("/default")
     public String defaultAfterLogin(HttpServletRequest request) {
-        if (request.isUserInRole("ROLE_DOCENTE")) {
-            return "redirect:/docente";
-        }
-        return "redirect:/admin";
+        return "redirect:/admin/classes";
     }
 }

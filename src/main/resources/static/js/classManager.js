@@ -88,7 +88,7 @@ function renderTable() {
         tr.addEventListener('click', (e) => {
             // Do not navigate when clicking action buttons/icons
             if (e.target && e.target.closest && e.target.closest('button')) return;
-            window.location.href = `/docente/subjects?classeId=${encodeURIComponent(cls.id)}`;
+            window.location.href = `/subjects?classeId=${encodeURIComponent(cls.id)}`;
         });
 
         tr.innerHTML = `
@@ -109,6 +109,7 @@ function renderTable() {
 
 function openAddModal() {
     editingId = null;
+    if (!formModal) return;
     modalTitle.textContent = "Aggiungi Classe";
     btnSave.textContent = "Aggiungi";
     classForm.action = "/classe";
@@ -118,6 +119,7 @@ function openAddModal() {
 
 function openEditModal(id) {
     editingId = id;
+    if (!formModal) return;
     const cls = classes.find(c => c.id === id);
     if (!cls) return;
 
@@ -151,19 +153,21 @@ function openEditModal(id) {
 
 function openDeleteModal(id) {
     deleteId = id;
+    if (!deleteModal) return;
     deleteClassIdInput.value = id;
     showModal(deleteModal);
 }
 
 function showModal(modal) {
+    if (!modalBackdrop || !modal) return;
     modalBackdrop.classList.add('visible');
     modal.classList.add('visible');
 }
 
 function closeAllModals() {
-    modalBackdrop.classList.remove('visible');
-    formModal.classList.remove('visible');
-    deleteModal.classList.remove('visible');
+    if (modalBackdrop) modalBackdrop.classList.remove('visible');
+    if (formModal) formModal.classList.remove('visible');
+    if (deleteModal) deleteModal.classList.remove('visible');
     stopDateUpdates();
 }
 
@@ -194,7 +198,7 @@ function stopDateUpdates() {
 
 // --- Event Listeners ---
 
-addBtn.addEventListener('click', openAddModal);
+if (addBtn) addBtn.addEventListener('click', openAddModal);
 
 // Traditional form submission will happen automatically
 // due to method="POST" and action="..." in HTML.
@@ -202,7 +206,7 @@ addBtn.addEventListener('click', openAddModal);
 // but for now let's keep it simple as requested.
 
 // Close on backdrop click
-modalBackdrop.addEventListener('click', closeAllModals);
+if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
 
 // Initial Render
 loadClasses();

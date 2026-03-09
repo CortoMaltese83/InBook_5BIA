@@ -59,6 +59,7 @@ body {
     font-family: "Almarai", sans-serif;
     font-weight: 800;
     font-style: normal;
+    font-size: 1.6rem;
 }
 
 .titillium-web-extralight {
@@ -165,6 +166,32 @@ body {
     transition: all 0.3s;
     padding: 0.5rem 1rem;
     border-radius: 8px;
+}
+
+/* Logout button in header nav (styled like .nav-link) */
+.logout-form {
+    display: flex;
+    margin: 0;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    line-height: inherit;
+}
+
+/* Keep the same padding/hover/active styles from .nav-link */
+.logout-btn.nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logout-btn:focus {
+    outline: none;
 }
 
 .nav-link.active,
