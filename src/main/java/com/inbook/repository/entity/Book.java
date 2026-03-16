@@ -21,7 +21,7 @@ public class Book {
     private String casaEditrice;
 
     @Column(nullable = false)
-    private int prezzo;
+    private double prezzo;
 
     @Column(nullable = false)
     private boolean daAcquistare;
@@ -31,7 +31,7 @@ public class Book {
 
     public Book() {}
 
-    public Book(String isbn, String autore, String titolo, int volume, String casaEditrice, int prezzo, boolean daAcquistare, boolean consigliato) {
+    public Book(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {
         this.isbn = isbn;
         this.autore = autore;
         this.titolo = titolo;
@@ -57,8 +57,8 @@ public class Book {
     public String getCasaEditrice() {return casaEditrice;}
     public void setCasaEditrice(String casaEditrice) {this.casaEditrice = casaEditrice;}
 
-    public int getPrezzo() {return prezzo;}
-    public void setPrezzo(int prezzo) {this.prezzo = prezzo;}
+    public double getPrezzo() {return prezzo;}
+    public void setPrezzo(double prezzo) {this.prezzo = prezzo;}
 
     public boolean isDaAcquistare() {return daAcquistare;}
     public void setDaAcquistare(boolean daAcquistare) {this.daAcquistare = daAcquistare;}
