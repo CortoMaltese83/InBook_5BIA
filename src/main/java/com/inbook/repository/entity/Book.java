@@ -1,0 +1,68 @@
+package com.inbook.repository.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+public class Book {
+
+    @Id
+    private String isbn;
+
+    @Column(nullable = false, length = 100)
+    private String autore;
+
+    @Column(nullable = false, length = 300)
+    private String titolo;
+
+    @Column(nullable = false)
+    private int volume;
+
+    @Column(nullable = false, length = 100)
+    private String casaEditrice;
+
+    @Column(nullable = false)
+    private int prezzo;
+
+    @Column(nullable = false)
+    private boolean daAcquistare;
+
+    @Column(nullable = false)
+    private boolean consigliato;
+
+    public Book() {}
+
+    public Book(String isbn, String autore, String titolo, int volume, String casaEditrice, int prezzo, boolean daAcquistare, boolean consigliato) {
+        this.isbn = isbn;
+        this.autore = autore;
+        this.titolo = titolo;
+        this.volume = volume;
+        this.casaEditrice = casaEditrice;
+        this.prezzo = prezzo;
+        this.daAcquistare = daAcquistare;
+        this.consigliato = consigliato;
+    }
+
+    public String getIsbn() {return isbn;}
+    public void setIsbn(String isbn) {this.isbn = isbn;}
+
+    public String getAutore() {return autore;}
+    public void setAutore(String autore) {this.autore = autore;}
+
+    public String getTitolo() {return titolo;}
+    public void setTitolo(String titolo) {this.titolo = titolo;}
+
+    public int getVolume() {return volume;}
+    public void setVolume(int volume) {this.volume = volume;}
+
+    public String getCasaEditrice() {return casaEditrice;}
+    public void setCasaEditrice(String casaEditrice) {this.casaEditrice = casaEditrice;}
+
+    public int getPrezzo() {return prezzo;}
+    public void setPrezzo(int prezzo) {this.prezzo = prezzo;}
+
+    public boolean isDaAcquistare() {return daAcquistare;}
+    public void setDaAcquistare(boolean daAcquistare) {this.daAcquistare = daAcquistare;}
+
+    public boolean isConsigliato() {return consigliato;}
+    public void setConsigliato(boolean consigliato) {this.consigliato = consigliato;}
+}

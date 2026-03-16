@@ -14,7 +14,6 @@ public class Subject {
     @JoinColumn(name = "classe_id", nullable = false)
     private SchoolClass classe;
 
-
     @ManyToOne
     @JoinColumn(name = "docente_id", nullable = false)
     private AppUser docente;
@@ -28,14 +27,20 @@ public class Subject {
     @Column(nullable = false)
     private Long updated_at;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "book_id", nullable = true)
+    private Book book;
+
+
     public Subject() {}
 
-    public Subject(SchoolClass classe, AppUser docente, String nomeMateria, Long created_at, Long updated_at) {
+    public Subject(SchoolClass classe, AppUser docente, String nomeMateria, Long created_at, Long updated_at, Book book) {
         this.classe = classe;
         this.docente = docente;
         this.nomeMateria = nomeMateria;
         this.created_at = created_at;
         this.updated_at = updated_at;
+        this.book = book;
     }
 
     // GETTER
@@ -45,6 +50,7 @@ public class Subject {
     public String getNomeMateria() { return nomeMateria; }
     public Long getCreated_at() { return created_at; }
     public Long getUpdated_at() { return updated_at; }
+    public Book getBook() { return book; }
 
     // SETTER
     public void setId(Long id) { this.id = id; }
@@ -53,4 +59,5 @@ public class Subject {
     public void setNomeMateria(String nomeMateria) { this.nomeMateria = nomeMateria; }
     public void setCreated_at(Long created_at) { this.created_at = created_at; }
     public void setUpdated_at(Long updated_at) { this.updated_at = updated_at; }
+    public void setBook(Book book) { this.book = book; }
 }
