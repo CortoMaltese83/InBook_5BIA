@@ -42,10 +42,10 @@ public class ClasseController{
 
     @GetMapping("/admin/classes")
     public String classManager(Model model, Principal principal) {
-        // Admin can CRUD, docente can only view
         AppUser user = service.requireLoggedUser(principal);
         boolean canManage = isAdminUser(user);
         model.addAttribute("canManageClasses", canManage);
+        model.addAttribute("username", user.getUsername());
         return "classManager";
     }
 

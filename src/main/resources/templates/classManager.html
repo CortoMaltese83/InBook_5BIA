@@ -26,6 +26,7 @@
         <div class="header-left">
             <h1>GESTIONE CLASSI</h1>
             <span class="role-badge" th:text="${canManageClasses} ? 'ADMIN' : 'DOCENTE'"></span>
+            <span class="username" th:text="${username}"></span>
         </div>
         <div class="header-right">
             <div class="logo">
