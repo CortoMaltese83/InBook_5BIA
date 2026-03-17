@@ -47,7 +47,7 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-    public void deleteSubject(String isbn) {
+    public void deleteBook(String isbn) {
         if (bookRepository.existsByIsbn(isbn)) {
             bookRepository.deleteByIsbn(isbn);
         }
