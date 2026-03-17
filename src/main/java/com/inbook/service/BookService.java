@@ -12,7 +12,7 @@ public class BookService {
 
     public BookService(BookRepository bookRepository) { this.bookRepository = bookRepository; }
 
-    public void addBook(String isbn, String autore, String titolo, int volume, String casaEditrice, int prezzo, boolean daAcquistare, boolean consigliato){
+    public BookRepository addBook(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato){
 
         Book book = new Book();
 

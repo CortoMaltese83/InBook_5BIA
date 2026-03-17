@@ -224,18 +224,24 @@ function updateNameField() {
     }
 }
 
-yearInput.addEventListener('input', updateNameField);
-sectionInput.addEventListener('input', updateNameField);
+if(yearInput != null){
+    yearInput.addEventListener('input', updateNameField);
+}
 
-nameInput.addEventListener('input', () => {
-    // If user manually types something that isn't the auto-generated value, mark as edited
-    const autoValue = `${yearInput.value}${sectionInput.value.toUpperCase()}`;
-    if (nameInput.value !== autoValue) {
-        isNameManuallyEdited = true;
-    }
-    // If user clears it or matches auto, maybe reset? Let's keep it simple: manual input = manual control.
-});
+if(sectionInput!= null){
+    sectionInput.addEventListener('input', updateNameField);
+}
 
+if(nameInput) {
+    nameInput.addEventListener('input', () => {
+        // If user manually types something that isn't the auto-generated value, mark as edited
+        const autoValue = `${yearInput.value}${sectionInput.value.toUpperCase()}`;
+        if (nameInput.value !== autoValue) {
+            isNameManuallyEdited = true;
+        }
+        // If user clears it or matches auto, maybe reset? Let's keep it simple: manual input = manual control.
+    });
+}
 // --- Particle System ---
 
 class Particle {

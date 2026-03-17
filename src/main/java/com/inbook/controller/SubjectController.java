@@ -94,6 +94,7 @@ public class SubjectController {
         AppUser user = subjectService.requireLoggedUser(principal);
         boolean canManage = isAdminUser(user);
         model.addAttribute("canManageClasses", canManage);
+        model.addAttribute("username", user.getUsername());
         return "subjectManager";
     }
 
