@@ -28,7 +28,7 @@ public class BookService {
         bookRepository.save(book);
     }
 
-    public Book modifyBook(String isbn, String autore, String titolo, int volume, String casaEditrice, int prezzo, boolean daAcquistare, boolean consigliato) {
+    public Book modifyBook(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {
         Book book = bookRepository.findByIsbn(isbn).orElseThrow(() -> new RuntimeException("libro non trovato"));
 
         book.setIsbn(isbn);
@@ -42,5 +42,7 @@ public class BookService {
 
         return bookRepository.save(book);
     }
+
+
 
 }
