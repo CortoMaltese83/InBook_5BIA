@@ -3,7 +3,11 @@ package com.inbook.service;
 
 import com.inbook.repository.BookRepository;
 import com.inbook.repository.entity.Book;
+import com.inbook.repository.entity.Subject;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class BookService {
@@ -43,6 +47,18 @@ public class BookService {
         return bookRepository.save(book);
     }
 
+    public void deleteSubject(String isbn) {
+        if (bookRepository.existsByIsbn(isbn)) {
+            bookRepository.deleteByIsbn(isbn);
+        }
+        else{
+            throw new RuntimeException("materia non trovata");
+        }
+    }
 
+    /*public List<Book> getAllBooks() {
+        return bookRepository.findAll();
+    }
+     */
 
 }
