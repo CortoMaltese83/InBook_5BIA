@@ -25,7 +25,7 @@ public class BookController {
 
     @GetMapping("/book/view")
     public String viewBooks(Model model){
-        model.addAttribute("books",service.);
+        model.addAttribute("books",service.getAllBooks());
         return "BookManager";
     }
 
