@@ -3,7 +3,6 @@ package com.inbook.service;
 
 import com.inbook.repository.BookRepository;
 import com.inbook.repository.entity.Book;
-import com.inbook.repository.entity.Subject;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
