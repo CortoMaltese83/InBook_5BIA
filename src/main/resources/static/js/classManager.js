@@ -1,10 +1,16 @@
 // Initial Data
 let classes = [];
 const API_URL = '/classe-data';
+const canManageClasses = window.CAN_MANAGE_CLASSES === true || document.body.dataset.canManage === 'true';
 
 let editingId = null;
 let deleteId = null;
 let dateInterval = null;
+let currentPage = 0;
+let pageSize = 25;
+let totalItems = 0;
+let totalPages = 0;
+let searchTimeout = null;
 
 // DOM Elements
 const tableBody = document.getElementById('table-body');
@@ -19,6 +25,14 @@ const addBtn = document.getElementById('add-btn');
 const classIdInput = document.getElementById('class-id');
 const deleteClassIdInput = document.getElementById('delete-class-id');
 const deleteForm = document.getElementById('delete-form');
+const searchInput = document.getElementById('class-search');
+const statusFilter = document.getElementById('status-filter');
+const pageSizeSelect = document.getElementById('page-size');
+const resetFiltersBtn = document.getElementById('reset-filters');
+const resultsSummary = document.getElementById('results-summary');
+const paginationInfo = document.getElementById('pagination-info');
+const prevPageBtn = document.getElementById('prev-page');
+const nextPageBtn = document.getElementById('next-page');
 
 // Inputs
 const nameInput = document.getElementById('nome');
@@ -48,34 +62,79 @@ const formatDate = (date) => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 };
 
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+};
+
+const getTableColumnCount = () => canManageClasses ? 7 : 6;
+
+function buildClassesUrl() {
+    const params = new URLSearchParams();
+    params.set('page', String(currentPage));
+    params.set('size', String(pageSize));
+
+    const search = searchInput ? searchInput.value.trim() : '';
+    const stato = statusFilter ? statusFilter.value : '';
+    if (search) params.set('search', search);
+    if (stato) params.set('stato', stato);
+
+    return `${API_URL}?${params.toString()}`;
+}
+
 
 // --- Core Functions ---
 
 async function loadClasses() {
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(buildClassesUrl());
         if (!response.ok) throw new Error(`Errore nel caricamento delle classi (Status: ${response.status})`);
         const data = await response.json();
-        classes = data.map(cls => ({
+
+        const items = Array.isArray(data) ? data : (data.items ?? []);
+        classes = items.map(cls => ({
             id: cls.id,
             nome: cls.nome,
             anno: cls.anno,
             sezione: cls.sezione,
             stato: cls.stato,
+            docenteNome: cls.docente_nome ?? cls.docenteNome ?? null,
             createdAt: cls.created_at,
             updatedAt: cls.updated_at
         }));
+
+        if (Array.isArray(data)) {
+            totalItems = classes.length;
+            totalPages = classes.length > 0 ? 1 : 0;
+            currentPage = 0;
+        } else {
+            totalItems = Number(data.totalItems ?? classes.length);
+            totalPages = Number(data.totalPages ?? 0);
+            currentPage = Number(data.page ?? currentPage);
+            pageSize = Number(data.size ?? pageSize);
+        }
+
+        updatePagination();
         renderTable();
     } catch (error) {
         console.error('Error:', error);
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ' + error.message + '</td></tr>';
+        tableBody.innerHTML = `<tr><td colspan="${getTableColumnCount()}" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ${escapeHtml(error.message)}</td></tr>`;
     }
 }
 
 function renderTable() {
     tableBody.innerHTML = '';
     if (classes.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 2rem; color: #6b7280;">Nessuna classe presente. Clicca su "Aggiungi" per crearne una nuova.</td></tr>';
+        const hasFilters = Boolean((searchInput && searchInput.value.trim()) || (statusFilter && statusFilter.value));
+        const message = hasFilters
+            ? 'Nessuna classe corrisponde ai filtri impostati.'
+            : 'Nessuna classe presente. Clicca su "Aggiungi" per crearne una nuova.';
+        tableBody.innerHTML = `<tr><td colspan="${getTableColumnCount()}" style="text-align:center; padding: 2rem; color: #6b7280;">${message}</td></tr>`;
         return;
     }
 
@@ -91,20 +150,49 @@ function renderTable() {
             window.location.href = `/subjects?classeId=${encodeURIComponent(cls.id)}`;
         });
 
+        const actionsCell = canManageClasses
+            ? `
+                <td>
+                    <button class="action-btn btn-edit" onclick="openEditModal(${cls.id})"><i class="fa-solid fa-pencil"></i></button>
+                    <button class="action-btn btn-delete" onclick="openDeleteModal(${cls.id})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `
+            : '';
+
         tr.innerHTML = `
-            <td><strong>${cls.nome}</strong></td>
-            <td>${cls.anno}</td>
-            <td>${cls.sezione}</td>
+            <td><strong>${escapeHtml(cls.nome)}</strong></td>
+            <td>${escapeHtml(cls.anno)}</td>
+            <td>${escapeHtml(cls.sezione)}</td>
             <td>${getStatusBadge(cls.stato)}</td>
             <td>${formatDate(cls.createdAt)}</td>
             <td>${formatDate(cls.updatedAt)}</td>
-            <td>
-                <button class="action-btn btn-edit" onclick="openEditModal(${cls.id})"><i class="fa-solid fa-pencil"></i></button>
-                <button class="action-btn btn-delete" onclick="openDeleteModal(${cls.id})"><i class="fa-solid fa-trash"></i></button>
-            </td>
+            ${actionsCell}
         `;
         tableBody.appendChild(tr);
     });
+}
+
+function updatePagination() {
+    if (resultsSummary) {
+        const start = totalItems === 0 ? 0 : (currentPage * pageSize) + 1;
+        const end = Math.min((currentPage + 1) * pageSize, totalItems);
+        resultsSummary.textContent = totalItems === 0
+            ? '0 classi'
+            : `${start}-${end} di ${totalItems}`;
+    }
+
+    if (paginationInfo) {
+        paginationInfo.textContent = totalPages === 0
+            ? 'Pagina 0 di 0'
+            : `Pagina ${currentPage + 1} di ${totalPages}`;
+    }
+
+    if (prevPageBtn) prevPageBtn.disabled = currentPage <= 0;
+    if (nextPageBtn) nextPageBtn.disabled = totalPages === 0 || currentPage >= totalPages - 1;
+
+    if (pageSizeSelect && pageSizeSelect.value !== String(pageSize)) {
+        pageSizeSelect.value = String(pageSize);
+    }
 }
 
 function openAddModal() {
@@ -207,6 +295,56 @@ if (addBtn) addBtn.addEventListener('click', openAddModal);
 
 // Close on backdrop click
 if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
+
+if (searchInput) {
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentPage = 0;
+            loadClasses();
+        }, 250);
+    });
+}
+
+if (statusFilter) {
+    statusFilter.addEventListener('change', () => {
+        currentPage = 0;
+        loadClasses();
+    });
+}
+
+if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', () => {
+        pageSize = Number(pageSizeSelect.value) || 25;
+        currentPage = 0;
+        loadClasses();
+    });
+}
+
+if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (statusFilter) statusFilter.value = '';
+        currentPage = 0;
+        loadClasses();
+    });
+}
+
+if (prevPageBtn) {
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage <= 0) return;
+        currentPage -= 1;
+        loadClasses();
+    });
+}
+
+if (nextPageBtn) {
+    nextPageBtn.addEventListener('click', () => {
+        if (totalPages === 0 || currentPage >= totalPages - 1) return;
+        currentPage += 1;
+        loadClasses();
+    });
+}
 
 // Initial Render
 loadClasses();

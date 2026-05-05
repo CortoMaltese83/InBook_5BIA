@@ -6,6 +6,9 @@ import com.inbook.repository.entity.SchoolClass;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
@@ -121,7 +124,29 @@ public class ClasseService {
         // No association docente<->class: everyone sees all classes
         return getAllClasses();
     }
-}
 
+    public Page<SchoolClass> getClassesPage(Principal principal, String search, String stato, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 5), 100);
+        String cleanSearch = normalizeParam(search);
+        String cleanStato = normalizeParam(stato);
+
+        Sort sort = Sort.by(
+                Sort.Order.asc("stato"),
+                Sort.Order.asc("anno"),
+                Sort.Order.asc("sezione"),
+                Sort.Order.asc("nome")
+        );
+
+        return repo.searchClasses(cleanSearch, cleanStato, PageRequest.of(safePage, safeSize, sort));
+    }
+
+    private String normalizeParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+}
 
 

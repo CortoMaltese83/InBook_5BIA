@@ -4,6 +4,7 @@ import com.inbook.repository.entity.SchoolClass;
 import com.inbook.service.ClasseService;
 import com.inbook.repository.entity.AppUser;
 import java.security.Principal;
+import org.springframework.data.domain.Page;
 import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -94,37 +95,33 @@ public class ClasseController{
 
     @GetMapping("/classe-data")
     @ResponseBody
-    public List<Map<String, Object>> viewClass(Principal principal) {
+    public Map<String, Object> viewClass(Principal principal,
+                                         @RequestParam(name = "page", defaultValue = "0") int page,
+                                         @RequestParam(name = "size", defaultValue = "25") int size,
+                                         @RequestParam(name = "search", required = false) String search,
+                                         @RequestParam(name = "stato", required = false) String stato) {
         try {
             System.out.println("DEBUG: Fetching classes from service...");
-            List<SchoolClass> classes = service.getAllClasses(principal);
-            System.out.println("DEBUG: Found " + (classes != null ? classes.size() : "null") + " classes");
-            
-            List<Map<String, Object>> response = new ArrayList<>();
-            if (classes != null) {
-                for (SchoolClass c : classes) {
+            Page<SchoolClass> classes = service.getClassesPage(principal, search, stato, page, size);
+            System.out.println("DEBUG: Found " + classes.getTotalElements() + " classes");
+
+            List<Map<String, Object>> items = new ArrayList<>();
+            if (classes.hasContent()) {
+                for (SchoolClass c : classes.getContent()) {
                     try {
-                        Map<String, Object> map = new HashMap<>();
-                        map.put("id", c.getId());
-                        map.put("nome", c.getNome());
-                        
-                        String anno = c.getAnno();
-                        if (anno == null && c.getNome() != null && c.getSezione() != null) {
-                            // Fallback: Infer anno from nome (e.g., "5BIA" minus "BIA" = "5")
-                            anno = c.getNome().replace(c.getSezione(), "");
-                        }
-                        map.put("anno", anno);
-                        
-                        map.put("sezione", c.getSezione());
-                        map.put("stato", c.getStato());
-                        map.put("created_at", c.getCreated_at());
-                        map.put("updated_at", c.getUpdated_at());
-                        response.add(map);
+                        items.add(toClassMap(c));
                     } catch (Exception rowEx) {
                         System.err.println("DEBUG: Error processing row ID " + c.getId() + ": " + rowEx.getMessage());
                     }
                 }
             }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("items", items);
+            response.put("page", classes.getNumber());
+            response.put("size", classes.getSize());
+            response.put("totalItems", classes.getTotalElements());
+            response.put("totalPages", classes.getTotalPages());
             return response;
         } catch (Exception e) {
             System.err.println("DEBUG FATAL in viewClass: " + e.getMessage());
@@ -133,5 +130,36 @@ public class ClasseController{
         }
     }
 
-}
+    private Map<String, Object> toClassMap(SchoolClass c) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", c.getId());
+        map.put("nome", c.getNome());
 
+        String anno = c.getAnno();
+        if (anno == null && c.getNome() != null && c.getSezione() != null) {
+            // Fallback: Infer anno from nome (e.g., "5BIA" minus "BIA" = "5")
+            anno = c.getNome().replace(c.getSezione(), "");
+        }
+        map.put("anno", anno);
+
+        map.put("sezione", c.getSezione());
+        map.put("stato", c.getStato());
+        map.put("created_at", c.getCreated_at());
+        map.put("updated_at", c.getUpdated_at());
+
+        if (c.getDocente() != null) {
+            map.put("docente_id", c.getDocente().getId());
+            String name = c.getDocente().getName() != null ? c.getDocente().getName().trim() : "";
+            String surname = c.getDocente().getSurname() != null ? c.getDocente().getSurname().trim() : "";
+            String fullName = (name + " " + surname).trim();
+            if (!fullName.isBlank()) {
+                map.put("docente_nome", fullName);
+            } else {
+                map.put("docente_nome", c.getDocente().getUsername());
+            }
+        }
+
+        return map;
+    }
+
+}

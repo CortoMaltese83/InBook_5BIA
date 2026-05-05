@@ -49,6 +49,29 @@
 
     <!-- Main Content -->
     <main class="main-container">
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="class-search" placeholder="Cerca classe, anno, sezione o docente">
+                </div>
+                <select id="status-filter" class="toolbar-select" aria-label="Filtra per stato">
+                    <option value="">Tutti gli stati</option>
+                    <option value="active">Attive</option>
+                    <option value="archived">Archiviate</option>
+                    <option value="hidden">Nascoste</option>
+                </select>
+                <button type="button" class="btn-reset" id="reset-filters">Reset</button>
+            </div>
+            <div class="toolbar-right">
+                <span class="results-summary" id="results-summary">-</span>
+                <select id="page-size" class="toolbar-select" aria-label="Righe per pagina">
+                    <option value="25">25 righe</option>
+                    <option value="50">50 righe</option>
+                    <option value="100">100 righe</option>
+                </select>
+            </div>
+        </div>
         <div class="table-container">
             <table class="class-table">
                 <thead>
@@ -66,6 +89,15 @@
                     <!-- Rows will be injected by JS -->
                 </tbody>
             </table>
+        </div>
+        <div class="pagination" id="pagination">
+            <button type="button" class="pagination-btn" id="prev-page">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="pagination-info" id="pagination-info">Pagina 1 di 1</span>
+            <button type="button" class="pagination-btn" id="next-page">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
         </div>
     </main>
 
