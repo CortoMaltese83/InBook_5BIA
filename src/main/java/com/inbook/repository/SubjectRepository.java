@@ -14,4 +14,6 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     List<Subject> findByDocente_Id(Long docenteId);
 
     List<Subject> findByClasse_IdAndDocente_Id(Long classeId, Long docenteId);
+
+    boolean existsByBook_Isbn(String isbn);
 }

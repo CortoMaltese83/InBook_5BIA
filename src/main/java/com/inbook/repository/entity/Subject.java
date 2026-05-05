@@ -28,7 +28,7 @@ public class Subject {
     private Long updated_at;
 
     @ManyToOne(optional = true)
-    @JoinColumn(name = "book_id", nullable = true)
+    @JoinColumn(name = "book_id", referencedColumnName = "isbn", nullable = true)
     private Book book;
 
 

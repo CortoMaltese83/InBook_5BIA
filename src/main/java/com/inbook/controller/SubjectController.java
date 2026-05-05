@@ -133,6 +133,34 @@ public class SubjectController {
         }
     }
 
+    @PostMapping("/subjects/book")
+    public String associateBook(@RequestParam("subjectId") Long subjectId,
+                                @RequestParam(name = "classeId", required = false) Long classeId,
+                                @RequestParam("isbn") String isbn,
+                                @RequestParam("autore") String autore,
+                                @RequestParam("titolo") String titolo,
+                                @RequestParam("volume") int volume,
+                                @RequestParam("casaEditrice") String casaEditrice,
+                                @RequestParam("prezzo") double prezzo,
+                                @RequestParam("daAcquistare") boolean daAcquistare,
+                                @RequestParam("consigliato") boolean consigliato) {
+        subjectService.associateBook(
+                subjectId,
+                isbn,
+                autore,
+                titolo,
+                volume,
+                casaEditrice,
+                prezzo,
+                daAcquistare,
+                consigliato
+        );
+        if (classeId != null) {
+            return "redirect:/subjects?classeId=" + classeId;
+        }
+        return "redirect:/subjects";
+    }
+
     @GetMapping("/materia-data")
     @ResponseBody
     public List<Map<String, Object>> viewSubjects(@RequestParam(name = "classeId", required = false) Long classeId) {
@@ -202,6 +230,21 @@ public class SubjectController {
 
                         // Subject fields
                         map.put("nome_materia", s.getNomeMateria());
+
+                        // Book association
+                        map.put("has_book", s.getBook() != null);
+                        if (s.getBook() != null) {
+                            map.put("book_id", s.getBook().getIsbn());
+                            map.put("book_db_id", s.getBook().getId());
+                            map.put("book_isbn", s.getBook().getIsbn());
+                            map.put("book_autore", s.getBook().getAutore());
+                            map.put("book_titolo", s.getBook().getTitolo());
+                            map.put("book_volume", s.getBook().getVolume());
+                            map.put("book_casa_editrice", s.getBook().getCasaEditrice());
+                            map.put("book_prezzo", s.getBook().getPrezzo());
+                            map.put("book_da_acquistare", s.getBook().isDaAcquistare());
+                            map.put("book_consigliato", s.getBook().isConsigliato());
+                        }
 
                         // Timestamps (stored as Long in DB)
                         map.put("created_at", s.getCreated_at());

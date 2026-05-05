@@ -6,7 +6,6 @@ import com.inbook.repository.entity.Book;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class BookService {
@@ -31,9 +30,11 @@ public class BookService {
         bookRepository.save(book);
     }
 
-    public Book modifyBook(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {
-        Book book = bookRepository.findByIsbn(isbn).orElseThrow(() -> new RuntimeException("libro non trovato"));
+    public Book modifyBook(Long id, String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("libro non trovato"));
 
+        // ISBN resta un campo (può essere aggiornato), la chiave è id
         book.setIsbn(isbn);
         book.setAutore(autore);
         book.setTitolo(titolo);
@@ -46,12 +47,11 @@ public class BookService {
         return bookRepository.save(book);
     }
 
-    public void deleteBook(String isbn) {
-        if (bookRepository.existsByIsbn(isbn)) {
-            bookRepository.deleteByIsbn(isbn);
-        }
-        else{
-            throw new RuntimeException("materia non trovata");
+    public void deleteBook(Long id) {
+        if (bookRepository.existsById(id)) {
+            bookRepository.deleteById(id);
+        } else {
+            throw new RuntimeException("libro non trovato");
         }
     }
 

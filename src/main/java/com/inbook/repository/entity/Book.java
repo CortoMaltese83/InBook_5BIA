@@ -3,9 +3,14 @@ package com.inbook.repository.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "book")
 public class Book {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 20, unique = true)
     private String isbn;
 
     @Column(nullable = false, length = 100)
@@ -31,6 +36,7 @@ public class Book {
 
     public Book() {}
 
+    // Costruttore comodo: NON include id (generato dal DB)
     public Book(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {
         this.isbn = isbn;
         this.autore = autore;
@@ -42,27 +48,30 @@ public class Book {
         this.consigliato = consigliato;
     }
 
-    public String getIsbn() {return isbn;}
-    public void setIsbn(String isbn) {this.isbn = isbn;}
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public String getAutore() {return autore;}
-    public void setAutore(String autore) {this.autore = autore;}
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
 
-    public String getTitolo() {return titolo;}
-    public void setTitolo(String titolo) {this.titolo = titolo;}
+    public String getAutore() { return autore; }
+    public void setAutore(String autore) { this.autore = autore; }
 
-    public int getVolume() {return volume;}
-    public void setVolume(int volume) {this.volume = volume;}
+    public String getTitolo() { return titolo; }
+    public void setTitolo(String titolo) { this.titolo = titolo; }
 
-    public String getCasaEditrice() {return casaEditrice;}
-    public void setCasaEditrice(String casaEditrice) {this.casaEditrice = casaEditrice;}
+    public int getVolume() { return volume; }
+    public void setVolume(int volume) { this.volume = volume; }
 
-    public double getPrezzo() {return prezzo;}
-    public void setPrezzo(double prezzo) {this.prezzo = prezzo;}
+    public String getCasaEditrice() { return casaEditrice; }
+    public void setCasaEditrice(String casaEditrice) { this.casaEditrice = casaEditrice; }
 
-    public boolean isDaAcquistare() {return daAcquistare;}
-    public void setDaAcquistare(boolean daAcquistare) {this.daAcquistare = daAcquistare;}
+    public double getPrezzo() { return prezzo; }
+    public void setPrezzo(double prezzo) { this.prezzo = prezzo; }
 
-    public boolean isConsigliato() {return consigliato;}
-    public void setConsigliato(boolean consigliato) {this.consigliato = consigliato;}
+    public boolean isDaAcquistare() { return daAcquistare; }
+    public void setDaAcquistare(boolean daAcquistare) { this.daAcquistare = daAcquistare; }
+
+    public boolean isConsigliato() { return consigliato; }
+    public void setConsigliato(boolean consigliato) { this.consigliato = consigliato; }
 }

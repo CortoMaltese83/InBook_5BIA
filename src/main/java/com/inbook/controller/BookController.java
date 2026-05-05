@@ -88,6 +88,8 @@ public class BookController {
 
                         Map<String, Object> map = new HashMap<>();
 
+                        map.put("id", b.getId());
+
                         map.put("isbn", b.getIsbn());
                         map.put("autore", b.getAutore());
                         map.put("titolo", b.getTitolo());
@@ -123,19 +125,32 @@ public class BookController {
 
     @PostMapping("/book/edit")
     public String editBook(Book book){
+        // Ora l'edit usa book_id (id) come chiave.
+        Long id = asLong(tryInvoke(book, "getId"));
+        if (id == null) {
+            throw new RuntimeException("book_id (id) mancante per la modifica");
+        }
 
-        service.modifyBook(book.getIsbn(),book.getAutore(),book.getTitolo()
-                ,book.getVolume(),book.getCasaEditrice(),book.getPrezzo()
-                ,book.isDaAcquistare(),book.isConsigliato());
+        service.modifyBook(
+                id,
+                book.getIsbn(),
+                book.getAutore(),
+                book.getTitolo(),
+                book.getVolume(),
+                book.getCasaEditrice(),
+                book.getPrezzo(),
+                book.isDaAcquistare(),
+                book.isConsigliato()
+        );
         return "redirect:/book/view";
     }
     @PostMapping("/book/delete")
-    public String deleteBook(@RequestParam("isbn")String isbn){
+    public String deleteBook(@RequestParam("id") Long id){
         try {
-            service.deleteBook(isbn);
+            service.deleteBook(id);
             return "redirect:/book/view";
-        }catch (Exception e){
-            throw new  RuntimeException(e);
+        } catch (Exception e){
+            throw new RuntimeException(e);
         }
     }
 

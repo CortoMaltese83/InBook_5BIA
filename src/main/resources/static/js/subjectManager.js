@@ -29,21 +29,34 @@ const tableBody = document.getElementById('table-body');
 const modalBackdrop = document.getElementById('modal-backdrop');
 const formModal = document.getElementById('form-modal');
 const deleteModal = document.getElementById('delete-modal');
+const bookModal = document.getElementById('book-modal');
 const modalTitle = document.getElementById('modal-title');
+const bookModalTitle = document.getElementById('book-modal-title');
 
 // Form & buttons
 // (rename the form in HTML): id="subject-form"
 const subjectForm = document.getElementById('subject-form');
 const btnSave = document.getElementById('btn-save');
 const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+const btnSaveBook = document.getElementById('btn-save-book');
 const addBtn = document.getElementById('add-btn');
 
 // Hidden inputs (rename in HTML)
 const subjectIdInput = document.getElementById('subject-id');
 const deleteSubjectIdInput = document.getElementById('delete-subject-id');
+const bookSubjectIdInput = document.getElementById('book-subject-id');
+const bookClasseIdInput = document.getElementById('book-classe-id');
 
 // Inputs (rename in HTML)
 const nomeMateriaInput = document.getElementById('nome-materia');
+const bookIsbnInput = document.getElementById('book-isbn');
+const bookAuthorInput = document.getElementById('book-author');
+const bookTitleInput = document.getElementById('book-title');
+const bookVolumeInput = document.getElementById('book-volume');
+const bookPublisherInput = document.getElementById('book-publisher');
+const bookPriceInput = document.getElementById('book-price');
+const bookBuyInput = document.getElementById('book-buy');
+const bookRecommendedInput = document.getElementById('book-recommended');
 
 // Displays
 const createdAtDisplay = document.getElementById('created-at-display');
@@ -127,7 +140,7 @@ async function loadSubjects(classeId) {
             }
         }
         // Subject entity:
-        // id, classe_id, docente_id, nome_materia, created_at, updated_at
+        // id, classe_id, docente_id, nome_materia, (book_id|bookId|hasBook), created_at, updated_at
         subjects = data.map(s => ({
             id: s.id,
             classeId: s.classe_id ?? s.classeId,
@@ -135,6 +148,21 @@ async function loadSubjects(classeId) {
             // opzionale: se il backend restituisce info del docente
             docenteNome: s.docente_nome ?? s.docenteNome ?? s.docente ?? s.teacher ?? null,
             nomeMateria: s.nome_materia ?? s.nomeMateria,
+            // Support multiple backend shapes for book association
+            bookId: s.book_id ?? s.bookId ?? (s.book ? (s.book.id ?? s.bookId ?? s.book_id) : null),
+            bookDbId: s.book_db_id ?? s.bookDbId ?? (s.book ? (s.book.dbId ?? s.book.id ?? null) : null),
+            bookIsbn: s.book_isbn ?? s.bookIsbn ?? s.book_id ?? s.bookId ?? (s.book ? (s.book.isbn ?? s.book.isbnCode ?? null) : null),
+            bookAuthor: s.book_autore ?? s.bookAuthor ?? s.book_author ?? (s.book ? (s.book.autore ?? s.book.author ?? null) : null),
+            bookTitle: s.book_titolo ?? s.bookTitle ?? (s.book ? (s.book.titolo ?? s.book.title ?? null) : null),
+            bookVolume: s.book_volume ?? s.bookVolume ?? (s.book ? (s.book.volume ?? null) : null),
+            bookPublisher: s.book_casa_editrice ?? s.bookCasaEditrice ?? s.book_publisher ?? (s.book ? (s.book.casaEditrice ?? s.book.publisher ?? null) : null),
+            bookPrice: s.book_prezzo ?? s.bookPrice ?? s.book_price ?? (s.book ? (s.book.prezzo ?? s.book.price ?? null) : null),
+            bookBuy: s.book_da_acquistare ?? s.bookDaAcquistare ?? (s.book ? (s.book.daAcquistare ?? null) : null),
+            bookRecommended: s.book_consigliato ?? s.bookConsigliato ?? (s.book ? (s.book.consigliato ?? null) : null),
+            hasBook: Boolean(
+                s.hasBook ?? s.has_book ?? s.bookPresent ?? s.book_present ??
+                (s.book_id ?? s.bookId ?? (s.book ? (s.book.id ?? s.bookId ?? s.book_id) : null))
+            ),
             createdAt: s.created_at ?? s.createdAt,
             updatedAt: s.updated_at ?? s.updatedAt
         }));
@@ -144,7 +172,7 @@ async function loadSubjects(classeId) {
     } catch (error) {
         console.error('Error:', error);
         if (tableBody) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ${escapeHtml(error.message)}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ${escapeHtml(error.message)}</td></tr>`;
         }
     }
 }
@@ -157,12 +185,12 @@ function renderTable() {
     const clsId = getSelectedClassId();
 
     if (!clsId) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">Classe non specificata. Apri questa pagina passando <code>?classeId=...</code> nell\\\'URL.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #6b7280;">Classe non specificata. Apri questa pagina passando <code>?classeId=...</code> nell\\\'URL.</td></tr>';
         return;
     }
 
     if (subjects.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 2rem; color: #6b7280;">Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #6b7280;">Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.</td></tr>';
         return;
     }
 
@@ -174,12 +202,20 @@ function renderTable() {
             ? escapeHtml(s.docenteNome)
             : (s.docenteId ? `#${escapeHtml(s.docenteId)}` : '-');
 
+        const semaforo = s.hasBook
+            ? '<span title="Libro associato" style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#22c55e;"></span>'
+            : '<span title="Nessun libro" style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#ef4444;"></span>';
+
+        const bookButtonTitle = s.hasBook ? 'Modifica libro associato' : 'Associa libro';
+
         tr.innerHTML = `
             <td><strong>${escapeHtml(s.nomeMateria)}</strong></td>
+            <td style="text-align:center;">${semaforo}</td>
             <td>${docenteLabel}</td>
             <td>${s.createdAt ? formatDate(s.createdAt) : '-'}</td>
             <td>${s.updatedAt ? formatDate(s.updatedAt) : '-'}</td>
             <td>
+                <button class="action-btn btn-book" onclick="openBookModal(${s.id})" title="${bookButtonTitle}"><i class="fa-solid fa-book"></i></button>
                 <button class="action-btn btn-edit" onclick="openEditModal(${s.id})"><i class="fa-solid fa-pencil"></i></button>
                 <button class="action-btn btn-delete" onclick="openDeleteModal(${s.id})"><i class="fa-solid fa-trash"></i></button>
             </td>
@@ -259,6 +295,27 @@ function openDeleteModal(id) {
     showModal(deleteModal);
 }
 
+function openBookModal(id) {
+    const s = subjects.find(x => x.id === id);
+    if (!s) return;
+
+    if (bookSubjectIdInput) bookSubjectIdInput.value = String(id);
+    if (bookClasseIdInput) bookClasseIdInput.value = String(getSelectedClassId() || s.classeId || '');
+    if (bookModalTitle) bookModalTitle.textContent = s.hasBook ? 'Modifica Libro' : 'Associa Libro';
+    if (btnSaveBook) btnSaveBook.textContent = s.hasBook ? 'Aggiorna' : 'Associa';
+    if (bookIsbnInput) bookIsbnInput.value = s.bookIsbn ?? '';
+    if (bookAuthorInput) bookAuthorInput.value = s.bookAuthor ?? '';
+    if (bookTitleInput) bookTitleInput.value = s.bookTitle ?? '';
+    if (bookVolumeInput) bookVolumeInput.value = s.bookVolume ?? '';
+    if (bookPublisherInput) bookPublisherInput.value = s.bookPublisher ?? '';
+    if (bookPriceInput) bookPriceInput.value = s.bookPrice ?? '';
+    if (bookBuyInput) bookBuyInput.value = String(Boolean(s.bookBuy));
+    if (bookRecommendedInput) bookRecommendedInput.value = String(Boolean(s.bookRecommended));
+    if (bookIsbnInput) setTimeout(() => bookIsbnInput.focus(), 0);
+
+    showModal(bookModal);
+}
+
 function showModal(modal) {
     if (!modalBackdrop || !modal) return;
     modalBackdrop.classList.add('visible');
@@ -269,6 +326,7 @@ function closeAllModals() {
     if (modalBackdrop) modalBackdrop.classList.remove('visible');
     if (formModal) formModal.classList.remove('visible');
     if (deleteModal) deleteModal.classList.remove('visible');
+    if (bookModal) bookModal.classList.remove('visible');
     stopDateUpdates();
 }
 
@@ -464,4 +522,5 @@ document.addEventListener('DOMContentLoaded', () => {
 // Expose functions to global scope for HTML onclick
 window.openEditModal = openEditModal;
 window.openDeleteModal = openDeleteModal;
+window.openBookModal = openBookModal;
 window.closeAllModals = closeAllModals;
