@@ -203,6 +203,97 @@ body {
     outline: none;
 }
 
+/* Toolbar */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    align-items: center;
+    margin-bottom: 0.55rem;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.toolbar-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.toolbar-label,
+.toolbar-selected,
+.results-summary,
+.pagination-info {
+    color: #4b5563;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.toolbar-label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+}
+
+.toolbar-selected {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 0.55rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    font-size: 0.72rem;
+    pointer-events: none;
+}
+
+.search-box input {
+    padding-left: 1.75rem;
+}
+
+.toolbar-select {
+    width: auto;
+    min-width: 120px;
+    background: rgba(255, 255, 255, 0.86);
+}
+
+.btn-reset,
+.pagination-btn {
+    border: none;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-reset {
+    padding: 0.42rem 0.65rem;
+}
+
+.btn-reset:hover,
+.pagination-btn:hover:not(:disabled) {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
 /* Table */
 .table-container {
     background: rgba(255, 255, 255, 0.8);
@@ -211,6 +302,27 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     overflow: hidden;
+}
+
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+}
+
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+}
+
+.pagination-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .subject-table,
@@ -233,6 +345,16 @@ body {
     letter-spacing: 0.05em;
 }
 
+.book-heading {
+    position: relative;
+}
+
+.help-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
 /* Help tooltip ("?") in table headers */
 .subject-table th .help-tooltip {
     display: inline-flex;
@@ -240,19 +362,72 @@ body {
     justify-content: center;
     width: 18px;
     height: 18px;
+    padding: 0;
     margin-left: 6px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 700;
-    cursor: help;
-    /* Darker colors so it shows on the light header background */
+    line-height: 1;
+    cursor: pointer;
+    appearance: none;
     border: 1px solid rgba(75, 85, 99, 0.45);
     color: rgba(75, 85, 99, 0.95);
     background: rgba(75, 85, 99, 0.08);
 }
 
-.subject-table th .help-tooltip:hover {
+.subject-table th .help-tooltip:hover,
+.subject-table th .help-tooltip[aria-expanded="true"] {
     background: rgba(75, 85, 99, 0.14);
+}
+
+.book-legend-hint {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 35;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 24px));
+    padding: 0.55rem 0.65rem;
+    border: 1px solid rgba(209, 213, 219, 0.9);
+    border-radius: 8px;
+    background: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.book-legend-hint[hidden] {
+    display: none;
+}
+
+.legend-row {
+    display: grid;
+    grid-template-columns: 12px auto 1fr;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: normal;
+}
+
+.legend-row + .legend-row {
+    margin-top: 0.4rem;
+}
+
+.legend-dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 999px;
+}
+
+.legend-dot-red {
+    background: #ef4444;
+}
+
+.legend-dot-green {
+    background: #22c55e;
 }
 
 .subject-table td,
@@ -583,4 +758,30 @@ select:focus {
     animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
+}
+
+@media (max-width: 780px) {
+    .toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        align-items: stretch;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        min-width: 100%;
+    }
+
+    .toolbar-select,
+    .btn-reset {
+        flex: 1;
+    }
+
+    .pagination {
+        justify-content: center;
+    }
 }

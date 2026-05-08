@@ -57,6 +57,24 @@
                 <select id="class-select" class="toolbar-select" aria-hidden="true" tabindex="-1" style="display:none;">
                     <!-- Options injected elsewhere (classes JS) -->
                 </select>
+                <div class="search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" id="subject-search" placeholder="Cerca materia, docente o libro">
+                </div>
+                <select id="book-status-filter" class="toolbar-select" aria-label="Filtra per libro">
+                    <option value="">Tutti i libri</option>
+                    <option value="with_book">Con libro</option>
+                    <option value="without_book">Senza libro</option>
+                </select>
+                <button type="button" class="btn-reset" id="reset-filters">Reset</button>
+            </div>
+            <div class="toolbar-right">
+                <span class="results-summary" id="results-summary">-</span>
+                <select id="page-size" class="toolbar-select" aria-label="Righe per pagina">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                </select>
             </div>
         </div>
         <div class="table-container">
@@ -64,9 +82,13 @@
                 <thead>
                     <tr>
                         <th>Materia</th>
-                        <th>
+                        <th class="book-heading">
                             Libro
-                            <span class="help-tooltip" title="Semaforo: rosso = nessun libro ancora inserito per la materia; verde = almeno un libro inserito.">?</span>
+                            <span class="help-wrapper">
+                                <button type="button" class="help-tooltip" id="book-legend-toggle"
+                                    aria-label="Mostra legenda semaforo libro" aria-expanded="false"
+                                    aria-controls="book-legend-hint">?</button>
+                            </span>
                         </th>
                         <th>Docente</th>
                         <th>Data Creazione</th>
@@ -79,7 +101,29 @@
                 </tbody>
             </table>
         </div>
+        <div class="pagination" id="pagination">
+            <button type="button" class="pagination-btn" id="prev-page">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="pagination-info" id="pagination-info">Pagina 1 di 1</span>
+            <button type="button" class="pagination-btn" id="next-page">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
     </main>
+
+    <div class="book-legend-hint" id="book-legend-hint" role="tooltip" hidden>
+        <div class="legend-row">
+            <span class="legend-dot legend-dot-red"></span>
+            <strong>ROSSO</strong>
+            <span>Non è stato ancora assegnato un libro</span>
+        </div>
+        <div class="legend-row">
+            <span class="legend-dot legend-dot-green"></span>
+            <strong>VERDE</strong>
+            <span>La materia possiede già un libro assegnato</span>
+        </div>
+    </div>
 
     <!-- Add Button -->
     <button class="add-btn" id="add-btn" title="Aggiungi Materia">

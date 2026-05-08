@@ -6,6 +6,9 @@ import com.inbook.repository.entity.AppUser;
 import com.inbook.repository.entity.Book;
 import com.inbook.repository.entity.SchoolClass;
 import com.inbook.repository.entity.Subject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,6 +63,32 @@ public class SubjectService {
 
     public List<Subject> getAllSubjects(Long classeId) {
         return subjectRepository.findByClasse_Id(classeId);
+    }
+
+    public Page<Subject> getSubjectsPage(Long classeId, String search, String bookStatus, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 5), 100);
+        String cleanSearch = normalizeParam(search);
+        String cleanBookStatus = normalizeParam(bookStatus);
+
+        Sort sort = Sort.by(
+                Sort.Order.asc("nomeMateria"),
+                Sort.Order.asc("id")
+        );
+
+        return subjectRepository.searchSubjects(
+                classeId,
+                cleanSearch,
+                cleanBookStatus,
+                PageRequest.of(safePage, safeSize, sort)
+        );
+    }
+
+    private String normalizeParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     @Transactional

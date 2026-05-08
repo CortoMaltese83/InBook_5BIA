@@ -16,11 +16,26 @@ let selectedClassLabel = null;
 let editingId = null;
 let deleteId = null;
 let dateInterval = null;
+let currentPage = 0;
+let pageSize = 25;
+let totalItems = 0;
+let totalPages = 0;
+let searchTimeout = null;
 
 // ---- DOM Elements ----
 // (HTML required IDs)
 // Class selector (optional now; class comes from URL): <select id="class-select"></select>
 const classSelect = document.getElementById('class-select');
+const bookLegendToggle = document.getElementById('book-legend-toggle');
+const bookLegendHint = document.getElementById('book-legend-hint');
+const searchInput = document.getElementById('subject-search');
+const bookStatusFilter = document.getElementById('book-status-filter');
+const pageSizeSelect = document.getElementById('page-size');
+const resetFiltersBtn = document.getElementById('reset-filters');
+const resultsSummary = document.getElementById('results-summary');
+const paginationInfo = document.getElementById('pagination-info');
+const prevPageBtn = document.getElementById('prev-page');
+const nextPageBtn = document.getElementById('next-page');
 
 // Table
 const tableBody = document.getElementById('table-body');
@@ -90,7 +105,17 @@ function getSelectedClassId() {
 }
 
 function buildSubjectsUrl(classeId) {
-    return `${SUBJECTS_API_URL}?classeId=${encodeURIComponent(classeId)}`;
+    const params = new URLSearchParams();
+    params.set('classeId', String(classeId));
+    params.set('page', String(currentPage));
+    params.set('size', String(pageSize));
+
+    const search = searchInput ? searchInput.value.trim() : '';
+    const bookStatus = bookStatusFilter ? bookStatusFilter.value : '';
+    if (search) params.set('search', search);
+    if (bookStatus) params.set('bookStatus', bookStatus);
+
+    return `${SUBJECTS_API_URL}?${params.toString()}`;
 }
 
 
@@ -125,23 +150,42 @@ async function loadSubjects(classeId) {
         if (!response.ok) throw new Error(`Errore nel caricamento delle materie (Status: ${response.status})`);
 
         const data = await response.json();
+        const items = Array.isArray(data) ? data : (data.items ?? []);
+
         // Extract class label from API response.
         // Requirement: show ONLY anno + sezione (e.g. "4 BIA"), never the class "nome" (e.g. "4BIA").
         selectedClassLabel = null;
-        if (Array.isArray(data) && data.length > 0) {
-            const first = data[0];
-
-            const anno = (first.classe_anno_scolastico ?? first.classeAnnoScolastico ?? first.anno ?? '').toString().trim();
-            const sezione = (first.classe_sezione ?? first.classeSezione ?? first.sezione ?? '').toString().trim();
+        const labelSource = Array.isArray(data) ? (items[0] ?? null) : data;
+        const fallbackLabelSource = items[0] ?? null;
+        if (labelSource || fallbackLabelSource) {
+            const anno = (
+                labelSource?.classeAnnoScolastico ??
+                labelSource?.classe_anno_scolastico ??
+                labelSource?.anno ??
+                fallbackLabelSource?.classe_anno_scolastico ??
+                fallbackLabelSource?.classeAnnoScolastico ??
+                fallbackLabelSource?.anno ??
+                ''
+            ).toString().trim();
+            const sezione = (
+                labelSource?.classeSezione ??
+                labelSource?.classe_sezione ??
+                labelSource?.sezione ??
+                fallbackLabelSource?.classe_sezione ??
+                fallbackLabelSource?.classeSezione ??
+                fallbackLabelSource?.sezione ??
+                ''
+            ).toString().trim();
 
             const parts = [anno, sezione].filter(Boolean);
-            if (parts.length) {
-                selectedClassLabel = parts.join(' ');
-            }
+            selectedClassLabel = parts.length
+                ? parts.join(' ')
+                : ((labelSource?.classeLabel ?? fallbackLabelSource?.classe_label ?? fallbackLabelSource?.classeLabel ?? '').toString().trim() || null);
         }
+
         // Subject entity:
         // id, classe_id, docente_id, nome_materia, (book_id|bookId|hasBook), created_at, updated_at
-        subjects = data.map(s => ({
+        subjects = items.map(s => ({
             id: s.id,
             classeId: s.classe_id ?? s.classeId,
             docenteId: s.docente_id ?? s.docenteId,
@@ -167,7 +211,19 @@ async function loadSubjects(classeId) {
             updatedAt: s.updated_at ?? s.updatedAt
         }));
 
+        if (Array.isArray(data)) {
+            totalItems = subjects.length;
+            totalPages = subjects.length > 0 ? 1 : 0;
+            currentPage = 0;
+        } else {
+            totalItems = Number(data.totalItems ?? subjects.length);
+            totalPages = Number(data.totalPages ?? 0);
+            currentPage = Number(data.page ?? currentPage);
+            pageSize = Number(data.size ?? pageSize);
+        }
+
         updateSelectedClassDisplay();
+        updatePagination();
         renderTable();
     } catch (error) {
         console.error('Error:', error);
@@ -190,7 +246,11 @@ function renderTable() {
     }
 
     if (subjects.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #6b7280;">Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.</td></tr>';
+        const hasFilters = Boolean((searchInput && searchInput.value.trim()) || (bookStatusFilter && bookStatusFilter.value));
+        const message = hasFilters
+            ? 'Nessuna materia corrisponde ai filtri impostati.'
+            : 'Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.';
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #6b7280;">${message}</td></tr>`;
         return;
     }
 
@@ -223,6 +283,55 @@ function renderTable() {
 
         tableBody.appendChild(tr);
     });
+}
+
+function updatePagination() {
+    if (resultsSummary) {
+        const start = totalItems === 0 ? 0 : (currentPage * pageSize) + 1;
+        const end = Math.min((currentPage + 1) * pageSize, totalItems);
+        resultsSummary.textContent = totalItems === 0
+            ? '0 materie'
+            : `${start}-${end} di ${totalItems}`;
+    }
+
+    if (paginationInfo) {
+        paginationInfo.textContent = totalPages === 0
+            ? 'Pagina 0 di 0'
+            : `Pagina ${currentPage + 1} di ${totalPages}`;
+    }
+
+    if (prevPageBtn) prevPageBtn.disabled = currentPage <= 0;
+    if (nextPageBtn) nextPageBtn.disabled = totalPages === 0 || currentPage >= totalPages - 1;
+
+    if (pageSizeSelect && pageSizeSelect.value !== String(pageSize)) {
+        pageSizeSelect.value = String(pageSize);
+    }
+}
+
+function positionBookLegendHint() {
+    if (!bookLegendToggle || !bookLegendHint || bookLegendHint.hidden) return;
+
+    const toggleRect = bookLegendToggle.getBoundingClientRect();
+    const hintRect = bookLegendHint.getBoundingClientRect();
+    const viewportMargin = 12;
+    const gap = 8;
+
+    let left = toggleRect.left + (toggleRect.width / 2) - (hintRect.width / 2);
+    left = Math.max(viewportMargin, Math.min(left, window.innerWidth - hintRect.width - viewportMargin));
+
+    const top = toggleRect.bottom + gap;
+
+    bookLegendHint.style.left = `${left}px`;
+    bookLegendHint.style.top = `${top}px`;
+}
+
+function setBookLegendVisible(isVisible) {
+    if (!bookLegendToggle || !bookLegendHint) return;
+    bookLegendHint.hidden = !isVisible;
+    bookLegendToggle.setAttribute('aria-expanded', String(isVisible));
+    if (isVisible) {
+        positionBookLegendHint();
+    }
 }
 
 
@@ -363,6 +472,81 @@ if (addBtn) addBtn.addEventListener('click', openAddModal);
 
 if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
 
+document.addEventListener('click', (event) => {
+    const clickedToggle = event.target.closest?.('#book-legend-toggle');
+    if (clickedToggle) {
+        event.preventDefault();
+        const isOpen = clickedToggle.getAttribute('aria-expanded') === 'true';
+        setBookLegendVisible(!isOpen);
+        return;
+    }
+
+    if (event.target.closest?.('#book-legend-hint')) {
+        return;
+    }
+
+    setBookLegendVisible(false);
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        setBookLegendVisible(false);
+    }
+});
+
+window.addEventListener('resize', () => positionBookLegendHint());
+window.addEventListener('scroll', () => positionBookLegendHint(), true);
+
+if (searchInput) {
+    searchInput.addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentPage = 0;
+            if (selectedClassId) loadSubjects(selectedClassId);
+        }, 250);
+    });
+}
+
+if (bookStatusFilter) {
+    bookStatusFilter.addEventListener('change', () => {
+        currentPage = 0;
+        if (selectedClassId) loadSubjects(selectedClassId);
+    });
+}
+
+if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', () => {
+        pageSize = Number(pageSizeSelect.value) || 25;
+        currentPage = 0;
+        if (selectedClassId) loadSubjects(selectedClassId);
+    });
+}
+
+if (resetFiltersBtn) {
+    resetFiltersBtn.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        if (bookStatusFilter) bookStatusFilter.value = '';
+        currentPage = 0;
+        if (selectedClassId) loadSubjects(selectedClassId);
+    });
+}
+
+if (prevPageBtn) {
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage <= 0 || !selectedClassId) return;
+        currentPage -= 1;
+        loadSubjects(selectedClassId);
+    });
+}
+
+if (nextPageBtn) {
+    nextPageBtn.addEventListener('click', () => {
+        if (totalPages === 0 || currentPage >= totalPages - 1 || !selectedClassId) return;
+        currentPage += 1;
+        loadSubjects(selectedClassId);
+    });
+}
+
 // Initial load: the class is provided by the query string (?classeId=...)
 (async () => {
     const params = new URLSearchParams(window.location.search);
@@ -384,6 +568,10 @@ if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
         selectedClassId = null;
         selectedClassLabel = null;
         subjects = [];
+        totalItems = 0;
+        totalPages = 0;
+        currentPage = 0;
+        updatePagination();
         renderTable();
         return;
     }
