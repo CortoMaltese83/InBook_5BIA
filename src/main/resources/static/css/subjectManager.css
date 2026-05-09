@@ -671,6 +671,66 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(109, 0, 254, 0.1);
 }
 
+.isbn-lookup-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.btn-lookup {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    min-height: 2rem;
+    padding: 0.42rem 0.6rem;
+    border: none;
+    border-radius: 6px;
+    background: #eef2ff;
+    color: var(--primary-blue);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s, transform 0.2s, opacity 0.2s;
+}
+
+.btn-lookup:hover:not(:disabled) {
+    background: #e0e7ff;
+    transform: translateY(-1px);
+}
+
+.btn-lookup:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.lookup-status {
+    display: none;
+    min-height: 1rem;
+    margin-top: 0.22rem;
+    font-size: 0.66rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.lookup-status.visible {
+    display: block;
+}
+
+.lookup-status.success {
+    color: #047857;
+}
+
+.lookup-status.error {
+    color: var(--danger);
+}
+
+.lookup-status.loading {
+    color: #4b5563;
+}
+
 .date-display {
     display: block;
     padding: 0.42rem 0.55rem;
@@ -783,5 +843,9 @@ select:focus {
 
     .pagination {
         justify-content: center;
+    }
+
+    .isbn-lookup-row {
+        grid-template-columns: 1fr;
     }
 }

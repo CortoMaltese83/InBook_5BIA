@@ -7,6 +7,7 @@
 
 // ---- API endpoints (adegua se diverso nel backend) ----
 const SUBJECTS_API_URL = '/materia-data';
+const BOOK_LOOKUP_API_URL = '/book/lookup';
 
 // ---- State ----
 let subjects = [];
@@ -72,6 +73,8 @@ const bookPublisherInput = document.getElementById('book-publisher');
 const bookPriceInput = document.getElementById('book-price');
 const bookBuyInput = document.getElementById('book-buy');
 const bookRecommendedInput = document.getElementById('book-recommended');
+const bookLookupBtn = document.getElementById('book-lookup-btn');
+const bookLookupStatus = document.getElementById('book-lookup-status');
 
 // Displays
 const createdAtDisplay = document.getElementById('created-at-display');
@@ -97,6 +100,81 @@ const escapeHtml = (str) => {
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
 };
+
+const sanitizeIsbn = (value) => String(value ?? '').replace(/\D/g, '');
+
+function setBookLookupStatus(message = '', type = '') {
+    if (!bookLookupStatus) return;
+    bookLookupStatus.textContent = message;
+    bookLookupStatus.className = 'lookup-status';
+    if (message) bookLookupStatus.classList.add('visible');
+    if (type) bookLookupStatus.classList.add(type);
+}
+
+function setBookLookupLoading(isLoading) {
+    if (!bookLookupBtn) return;
+    bookLookupBtn.disabled = isLoading;
+    bookLookupBtn.setAttribute('aria-busy', String(isLoading));
+}
+
+function applyBookLookupResult(data) {
+    if (!data) return;
+
+    if (bookIsbnInput && data.isbn) bookIsbnInput.value = data.isbn;
+    if (bookAuthorInput && data.autore) bookAuthorInput.value = data.autore;
+    if (bookTitleInput && data.titolo) bookTitleInput.value = data.titolo;
+    if (bookPublisherInput && data.casaEditrice) bookPublisherInput.value = data.casaEditrice;
+
+    if (bookVolumeInput && data.volume !== null && data.volume !== undefined) {
+        const parsedVolume = Number(data.volume);
+        if (Number.isInteger(parsedVolume) && parsedVolume >= 0) {
+            bookVolumeInput.value = String(parsedVolume);
+        }
+    }
+
+    if (bookPriceInput && data.prezzo !== null && data.prezzo !== undefined) {
+        const parsedPrice = Number(data.prezzo);
+        if (Number.isFinite(parsedPrice) && parsedPrice >= 0) {
+            bookPriceInput.value = parsedPrice.toFixed(2);
+        }
+    }
+}
+
+async function lookupBookFromAie() {
+    if (!bookIsbnInput) return;
+
+    const isbn = sanitizeIsbn(bookIsbnInput.value);
+    if (isbn.length < 13) {
+        setBookLookupStatus('Inserisci almeno 13 cifre ISBN.', 'error');
+        return;
+    }
+
+    setBookLookupLoading(true);
+    setBookLookupStatus('Ricerca AIE in corso...', 'loading');
+
+    try {
+        const response = await fetch(`${BOOK_LOOKUP_API_URL}?isbn=${encodeURIComponent(isbn)}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        let payload = {};
+        try {
+            payload = await response.json();
+        } catch (ignore) {
+            payload = {};
+        }
+        if (!response.ok) {
+            throw new Error(payload.message || `Ricerca non riuscita (HTTP ${response.status})`);
+        }
+
+        applyBookLookupResult(payload);
+        setBookLookupStatus('Dati compilati da AIE.', 'success');
+    } catch (error) {
+        console.error('AIE lookup error:', error);
+        setBookLookupStatus(error.message || 'Ricerca AIE non riuscita.', 'error');
+    } finally {
+        setBookLookupLoading(false);
+    }
+}
 
 // IMPORTANT: class id is fixed by URL query string (?classeId=...)
 // We do NOT read from classSelect anymore.
@@ -420,6 +498,7 @@ function openBookModal(id) {
     if (bookPriceInput) bookPriceInput.value = s.bookPrice ?? '';
     if (bookBuyInput) bookBuyInput.value = String(Boolean(s.bookBuy));
     if (bookRecommendedInput) bookRecommendedInput.value = String(Boolean(s.bookRecommended));
+    setBookLookupStatus('');
     if (bookIsbnInput) setTimeout(() => bookIsbnInput.focus(), 0);
 
     showModal(bookModal);
@@ -471,6 +550,14 @@ function stopDateUpdates() {
 if (addBtn) addBtn.addEventListener('click', openAddModal);
 
 if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
+
+if (bookLookupBtn) {
+    bookLookupBtn.addEventListener('click', lookupBookFromAie);
+}
+
+if (bookIsbnInput) {
+    bookIsbnInput.addEventListener('input', () => setBookLookupStatus(''));
+}
 
 document.addEventListener('click', (event) => {
     const clickedToggle = event.target.closest?.('#book-legend-toggle');

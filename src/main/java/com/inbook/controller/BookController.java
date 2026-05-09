@@ -1,7 +1,11 @@
 package com.inbook.controller;
 
 import com.inbook.dto.Book;
+import com.inbook.dto.BookLookupResult;
+import com.inbook.service.AieBookLookupService;
 import com.inbook.service.BookService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +22,11 @@ import java.util.Map;
 @Controller
 public class BookController {
     private BookService service;
-    public BookController(BookService service){
+    private final AieBookLookupService aieBookLookupService;
+
+    public BookController(BookService service, AieBookLookupService aieBookLookupService){
         this.service=service;
+        this.aieBookLookupService = aieBookLookupService;
     }
 
     private static Object tryInvoke(Object target, String methodName) {
@@ -121,6 +128,36 @@ public class BookController {
             e.printStackTrace();
             throw new RuntimeException("Errore recupero dati: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/book/lookup")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> lookupBook(@RequestParam("isbn") String isbn) {
+        try {
+            BookLookupResult result = aieBookLookupService.lookupByIsbn(isbn);
+            Map<String, Object> response = new HashMap<>();
+            response.put("isbn", result.getIsbn());
+            response.put("autore", result.getAutore());
+            response.put("titolo", result.getTitolo());
+            response.put("volume", result.getVolume());
+            response.put("casaEditrice", result.getCasaEditrice());
+            response.put("prezzo", result.getPrezzo());
+            response.put("source", result.getSource());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return error(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (AieBookLookupService.AieBookNotFoundException e) {
+            return error(HttpStatus.NOT_FOUND, e.getMessage());
+        } catch (AieBookLookupService.AieLookupUnavailableException e) {
+            return error(HttpStatus.BAD_GATEWAY, e.getMessage());
+        }
+    }
+
+    private ResponseEntity<Map<String, Object>> error(HttpStatus status, String message) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", status.value());
+        response.put("message", message);
+        return ResponseEntity.status(status).body(response);
     }
 
     @PostMapping("/book/edit")

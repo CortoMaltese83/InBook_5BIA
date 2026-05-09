@@ -183,7 +183,14 @@
             <div class="form-group-row">
                 <div class="form-group">
                     <label for="book-isbn">ISBN</label>
-                    <input type="text" id="book-isbn" name="isbn" required maxlength="20" placeholder="Es. 9788800000000">
+                    <div class="isbn-lookup-row">
+                        <input type="text" id="book-isbn" name="isbn" required maxlength="20" placeholder="Es. 9788800000000">
+                        <button type="button" class="btn-lookup" id="book-lookup-btn" title="Cerca su AIE">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <span>Cerca AIE</span>
+                        </button>
+                    </div>
+                    <div class="lookup-status" id="book-lookup-status" role="status" aria-live="polite"></div>
                 </div>
                 <div class="form-group">
                     <label for="book-volume">Vol.</label>
