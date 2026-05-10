@@ -1,6 +1,7 @@
 // Initial Data
 let classes = [];
 const API_URL = '/classe-data';
+const DEFAULT_STATUS_FILTER = 'active';
 const canManageClasses = window.CAN_MANAGE_CLASSES === true || document.body.dataset.canManage === 'true';
 const canCreateClasses = window.CAN_CREATE_CLASSES === true || document.body.dataset.canCreate === 'true';
 
@@ -12,6 +13,8 @@ let pageSize = 25;
 let totalItems = 0;
 let totalPages = 0;
 let searchTimeout = null;
+const initialParams = new URLSearchParams(window.location.search);
+const initialStato = initialParams.get('stato') || DEFAULT_STATUS_FILTER;
 
 // DOM Elements
 const tableBody = document.getElementById('table-body');
@@ -34,6 +37,10 @@ const resultsSummary = document.getElementById('results-summary');
 const paginationInfo = document.getElementById('pagination-info');
 const prevPageBtn = document.getElementById('prev-page');
 const nextPageBtn = document.getElementById('next-page');
+
+if (statusFilter) {
+    statusFilter.value = initialStato;
+}
 
 // Inputs
 const nameInput = document.getElementById('nome');
@@ -334,7 +341,7 @@ if (pageSizeSelect) {
 if (resetFiltersBtn) {
     resetFiltersBtn.addEventListener('click', () => {
         if (searchInput) searchInput.value = '';
-        if (statusFilter) statusFilter.value = '';
+        if (statusFilter) statusFilter.value = DEFAULT_STATUS_FILTER;
         currentPage = 0;
         loadClasses();
     });
