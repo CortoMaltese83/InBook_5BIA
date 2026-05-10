@@ -60,4 +60,20 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
                                  @Param("search") String search,
                                  @Param("bookStatus") String bookStatus,
                                  Pageable pageable);
+
+    @Query("""
+            select s from Subject s
+            join s.classe c
+            left join c.institution i
+            left join c.docente cd
+            left join cd.institution cdi
+            join s.book b
+            where lower(c.stato) = 'active'
+              and (
+                i.id = :institutionId
+                or (i.id is null and cdi.id = :institutionId)
+              )
+            order by c.anno asc, c.sezione asc, c.nome asc, s.nomeMateria asc, b.titolo asc
+            """)
+    List<Subject> findActiveBookAssignmentsByInstitution(@Param("institutionId") Long institutionId);
 }

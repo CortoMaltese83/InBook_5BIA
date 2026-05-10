@@ -130,7 +130,8 @@ select {
     background: #fff;
 }
 
-button {
+button,
+a.btn-small {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -141,6 +142,7 @@ button {
     background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
     font-weight: 700;
     cursor: pointer;
+    text-decoration: none;
 }
 
 .btn-small {
@@ -151,6 +153,10 @@ button {
 
 .danger {
     background: var(--danger);
+}
+
+.btn-export {
+    background: #15803d;
 }
 
 .table-wrap {

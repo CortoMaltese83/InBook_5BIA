@@ -64,11 +64,17 @@
                             <option value="SUSPENDED" th:selected="${institution.status == 'SUSPENDED'}">Sospeso</option>
                         </select>
                     </td>
-                    <td>
+                    <td class="actions">
                         <form th:id="${'institution-update-' + institution.id}" action="/admin/institutions/update" method="post">
                             <input type="hidden" name="id" th:value="${institution.id}">
-                            <button type="submit" class="btn-small"><i class="fa-solid fa-floppy-disk"></i></button>
+                            <button type="submit" class="btn-small" title="Salva istituto"><i class="fa-solid fa-floppy-disk"></i></button>
                         </form>
+                        <a class="btn-small btn-export"
+                           th:href="@{/admin/institutions/{id}/books.xlsx(id=${institution.id})}"
+                           title="Esporta libri attivi"
+                           aria-label="Esporta libri attivi">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </a>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(institutions)}">

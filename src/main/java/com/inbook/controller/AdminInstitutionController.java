@@ -1,23 +1,33 @@
 package com.inbook.controller;
 
 import com.inbook.repository.entity.AppUser;
+import com.inbook.service.InstitutionBookExportService;
 import com.inbook.service.InstitutionAdminService;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 
 @Controller
 public class AdminInstitutionController {
     private final InstitutionAdminService service;
+    private final InstitutionBookExportService bookExportService;
 
-    public AdminInstitutionController(InstitutionAdminService service) {
+    public AdminInstitutionController(InstitutionAdminService service,
+                                      InstitutionBookExportService bookExportService) {
         this.service = service;
+        this.bookExportService = bookExportService;
     }
 
     @GetMapping("/admin/institutions")
@@ -34,6 +44,19 @@ public class AdminInstitutionController {
         model.addAttribute("invitations", service.listInvitations());
         model.addAttribute("auditEvents", service.latestAuditEvents());
         return "institutionManager";
+    }
+
+    @GetMapping("/admin/institutions/{id}/books.xlsx")
+    public ResponseEntity<byte[]> exportActiveBooks(@PathVariable("id") Long id, Principal principal) {
+        InstitutionBookExportService.ActiveBookExport export = bookExportService.exportActiveBooks(id, principal);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(export.contentType()))
+                .contentLength(export.content().length)
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(export.filename(), StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
+                .body(export.content());
     }
 
     @PostMapping("/admin/institutions")
