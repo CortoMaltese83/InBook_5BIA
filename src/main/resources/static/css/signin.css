@@ -168,6 +168,33 @@ input:focus {
     border-color: #7C3AED; /* Focus color matching button */
 }
 
+.form-alert {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.form-alert-error {
+    background: #FEF2F2;
+    border: 1px solid #FCA5A5;
+    color: #991B1B;
+}
+
+.form-alert-success {
+    background: #ECFDF5;
+    border: 1px solid #86EFAC;
+    color: #166534;
+}
+
+input[readonly] {
+    background: #F3F4F6;
+    color: #4B5563;
+}
+
 /* Footer Link */
 .footer-link {
     margin-top: 24px;

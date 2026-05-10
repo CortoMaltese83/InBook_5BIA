@@ -107,7 +107,21 @@ public class AieBookLookupService {
             throw new AieLookupUnavailableException("Ricerca AIE interrotta");
         } catch (IOException e) {
             throw new AieLookupUnavailableException("AIE non raggiungibile: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            throw new AieLookupUnavailableException(normalizeAieClientError(e));
         }
+    }
+
+    private String normalizeAieClientError(IllegalArgumentException e) {
+        String message = e.getMessage();
+        String normalizedMessage = message == null ? "" : message.toLowerCase(Locale.ITALIAN);
+        if (normalizedMessage.contains("troppi tentativi")) {
+            return "AIE ha bloccato temporaneamente la ricerca. Riprova piu tardi.";
+        }
+        if (normalizedMessage.contains("illegal character")) {
+            return "AIE ha risposto con un redirect di errore non valido. Probabile blocco temporaneo della ricerca.";
+        }
+        return "AIE ha risposto con una richiesta non valida: " + (message == null ? "errore sconosciuto" : message);
     }
 
     private Optional<BookLookupResult> lookupCachedBook(String isbn) {

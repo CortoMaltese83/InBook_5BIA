@@ -32,6 +32,26 @@ public class AppUser {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "institution_id")
+    private Institution institution;
+
+    @Column(length = 40)
+    private String status;
+
+    @Column
+    private Boolean emailVerified = false;
+
+    @Column(length = 120, unique = true)
+    private String emailVerificationToken;
+
+    @Column
+    private Long emailVerificationExpiresAt;
+
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "registration_invitation_id")
+    private TeacherInvitation registrationInvitation;
+
     public AppUser() {}
 
     public AppUser(String email, String passwordHash, String name, String surname, String username, String roles, boolean enabled) {
@@ -52,6 +72,12 @@ public class AppUser {
     public String getUsername() { return username; }
     public String getRoles() { return roles; }
     public boolean isEnabled() { return enabled; }
+    public Institution getInstitution() { return institution; }
+    public String getStatus() { return status; }
+    public Boolean getEmailVerified() { return emailVerified; }
+    public String getEmailVerificationToken() { return emailVerificationToken; }
+    public Long getEmailVerificationExpiresAt() { return emailVerificationExpiresAt; }
+    public TeacherInvitation getRegistrationInvitation() { return registrationInvitation; }
 
     public void setEmail(String email) { this.email = email; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
@@ -60,5 +86,11 @@ public class AppUser {
     public void setUsername(String username) { this.username = username; }
     public void setRoles(String roles) { this.roles = roles; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+    public void setInstitution(Institution institution) { this.institution = institution; }
+    public void setStatus(String status) { this.status = status; }
+    public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
+    public void setEmailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; }
+    public void setEmailVerificationExpiresAt(Long emailVerificationExpiresAt) { this.emailVerificationExpiresAt = emailVerificationExpiresAt; }
+    public void setRegistrationInvitation(TeacherInvitation registrationInvitation) { this.registrationInvitation = registrationInvitation; }
 
 }

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBook - Istituti</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/institutionManager.css">
+</head>
+
+<body>
+<header class="header">
+    <div>
+        <h1>GESTIONE ISTITUTI</h1>
+        <span class="username" th:text="${username}">admin</span>
+    </div>
+    <nav class="nav">
+        <a href="/admin/classes" class="nav-link">Classi</a>
+        <a href="/admin/institutions" class="nav-link active">Istituti</a>
+        <form class="logout-form" th:action="@{/logout}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </form>
+    </nav>
+</header>
+
+<main class="main-container">
+    <div class="notice success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="notice error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Istituti</h2>
+        </div>
+        <form class="inline-form" action="/admin/institutions" method="post">
+            <input type="text" name="name" placeholder="Nome istituto" required>
+            <input type="text" name="code" placeholder="Codice" required>
+            <button type="submit"><i class="fa-solid fa-plus"></i> Crea</button>
+        </form>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Codice</th>
+                    <th>Stato</th>
+                    <th>Azioni</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="institution : ${institutions}">
+                    <td>
+                        <form class="row-form" action="/admin/institutions/update" method="post">
+                            <input type="hidden" name="id" th:value="${institution.id}">
+                            <input type="text" name="name" th:value="${institution.name}" required>
+                    </td>
+                    <td><input type="text" name="code" th:value="${institution.code}" required></td>
+                    <td>
+                        <select name="status">
+                            <option value="ACTIVE" th:selected="${institution.status == 'ACTIVE'}">Attivo</option>
+                            <option value="SUSPENDED" th:selected="${institution.status == 'SUSPENDED'}">Sospeso</option>
+                        </select>
+                    </td>
+                    <td>
+                            <button type="submit" class="btn-small"><i class="fa-solid fa-floppy-disk"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(institutions)}">
+                    <td colspan="4" class="empty">Nessun istituto censito.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Domini Email</h2>
+        </div>
+        <form class="inline-form" action="/admin/institutions/domains" method="post">
+            <select name="institutionId" required>
+                <option value="">Istituto</option>
+                <option th:each="institution : ${institutions}" th:value="${institution.id}" th:text="${institution.name}"></option>
+            </select>
+            <input type="text" name="domain" placeholder="istituto.edu.it" required>
+            <button type="submit"><i class="fa-solid fa-plus"></i> Aggiungi</button>
+        </form>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Dominio</th><th>Istituto</th><th>Stato</th><th>Azioni</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="domain : ${domains}">
+                    <td th:text="${domain.domain}">dominio</td>
+                    <td th:text="${domain.institution.name}">istituto</td>
+                    <td><span class="badge" th:classappend="${domain.active} ? ' ok' : ' muted'" th:text="${domain.active} ? 'Attivo' : 'Disattivo'">Attivo</span></td>
+                    <td>
+                        <form action="/admin/institutions/domains/toggle" method="post">
+                            <input type="hidden" name="id" th:value="${domain.id}">
+                            <input type="hidden" name="active" th:value="${!domain.active}">
+                            <button type="submit" class="btn-small" th:text="${domain.active} ? 'Disattiva' : 'Attiva'">Toggle</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(domains)}"><td colspan="4" class="empty">Nessun dominio censito.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Inviti Docenti</h2>
+        </div>
+        <form class="inline-form" action="/admin/institutions/invite" method="post">
+            <select name="institutionId" required>
+                <option value="">Istituto</option>
+                <option th:each="institution : ${institutions}" th:value="${institution.id}" th:text="${institution.name}"></option>
+            </select>
+            <input type="email" name="email" placeholder="docente@istituto.edu.it" required>
+            <button type="submit"><i class="fa-solid fa-paper-plane"></i> Invita</button>
+        </form>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Email</th><th>Istituto</th><th>Stato</th><th>Scadenza</th><th>Azioni</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="invitation : ${invitations}">
+                    <td th:text="${invitation.email}">email</td>
+                    <td th:text="${invitation.institution.name}">istituto</td>
+                    <td><span class="badge" th:text="${invitation.status}">PENDING</span></td>
+                    <td th:text="${invitation.expires_at}">-</td>
+                    <td>
+                        <form action="/admin/institutions/invite/revoke" method="post" th:if="${invitation.status == 'PENDING'}">
+                            <input type="hidden" name="id" th:value="${invitation.id}">
+                            <button type="submit" class="btn-small danger">Revoca</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(invitations)}"><td colspan="5" class="empty">Nessun invito creato.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Docenti</h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr><th>Docente</th><th>Email</th><th>Istituto</th><th>Verifica</th><th>Stato</th><th>Azioni</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="teacher : ${teachers}">
+                    <td th:text="${teacher.name + ' ' + teacher.surname}">Nome</td>
+                    <td th:text="${teacher.email}">email</td>
+                    <td th:text="${teacher.institution != null ? teacher.institution.name : '-'}">istituto</td>
+                    <td><span class="badge" th:classappend="${teacher.emailVerified} ? ' ok' : ' warn'" th:text="${teacher.emailVerified} ? 'Verificata' : 'Da verificare'">Verifica</span></td>
+                    <td><span class="badge" th:text="${teacher.status != null ? teacher.status : '-'}">stato</span></td>
+                    <td class="actions">
+                        <form action="/admin/institutions/teachers/approve" method="post" th:if="${teacher.status == 'PENDING_APPROVAL'}">
+                            <input type="hidden" name="id" th:value="${teacher.id}">
+                            <button type="submit" class="btn-small">Approva</button>
+                        </form>
+                        <form action="/admin/institutions/teachers/suspend" method="post" th:if="${teacher.enabled}">
+                            <input type="hidden" name="id" th:value="${teacher.id}">
+                            <button type="submit" class="btn-small danger">Sospendi</button>
+                        </form>
+                        <form action="/admin/institutions/teachers/reactivate" method="post" th:if="${teacher.status == 'SUSPENDED'}">
+                            <input type="hidden" name="id" th:value="${teacher.id}">
+                            <button type="submit" class="btn-small">Riattiva</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(teachers)}"><td colspan="6" class="empty">Nessun docente registrato.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Audit</h2>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Quando</th><th>Azione</th><th>Attore</th><th>Target</th><th>Dettagli</th></tr></thead>
+                <tbody>
+                <tr th:each="event : ${auditEvents}">
+                    <td th:text="${event.created_at}">-</td>
+                    <td th:text="${event.action}">azione</td>
+                    <td th:text="${event.actor != null ? event.actor.username : 'sistema'}">attore</td>
+                    <td th:text="${event.targetUser != null ? event.targetUser.email : '-'}">target</td>
+                    <td th:text="${event.details}">dettagli</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(auditEvents)}"><td colspan="5" class="empty">Nessun evento audit.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+
+</html>

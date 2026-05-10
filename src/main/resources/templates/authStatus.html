@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBook - Verifica Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/login.css">
+</head>
+
+<body>
+<div class="login-container">
+    <div class="login-card">
+        <div class="logo">
+            <img src="/images/InBook2.svg" alt="InBook Logo" width="80" height="80">
+        </div>
+        <h1 th:text="${title}">Verifica account</h1>
+        <p class="subtitle" th:text="${message}">Stato verifica</p>
+        <div class="footer-links">
+            <a href="/login">Vai al login</a>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
@@ -54,6 +54,9 @@
                 </svg>
                 <span>Credenziali non valide. Riprova.</span>
             </div>
+
+            <div class="success-alert" th:if="${successMessage}" th:text="${successMessage}"></div>
+            <div class="error-alert" th:if="${errorMessage}" th:text="${errorMessage}"></div>
 
             <form action="/login" method="post" class="login-form">
                 <div class="form-group">

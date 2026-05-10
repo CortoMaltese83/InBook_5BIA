@@ -218,6 +218,18 @@ input[type="password"]:focus {
     font-weight: 500;
 }
 
+.success-alert {
+    background-color: #ECFDF5;
+    border: 1px solid #86EFAC;
+    color: #166534;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+}
+
 .alert-icon {
     color: #EF4444;
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,7 @@
         </div>
 
         <h1>Benvenuto in InBook!</h1>
-        <p class="subtitle">Inizia oggi stesso con un nuovo account</p>
+        <p class="subtitle" th:text="${inviteInstitution != null ? 'Completa la registrazione per ' + inviteInstitution : 'Inizia oggi stesso con un nuovo account'}">Inizia oggi stesso con un nuovo account</p>
 
         <div class="social-login">
             <button type="button" class="btn btn-outline">
@@ -53,7 +53,11 @@
             <span>oppure registrati con email</span>
         </div>
 
+        <div class="form-alert form-alert-error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+        <div class="form-alert form-alert-success" th:if="${successMessage}" th:text="${successMessage}"></div>
+
         <form action="/auth/register" method="POST">
+            <input type="hidden" name="inviteToken" th:value="${inviteToken}">
             <div class="form-row">
                 <div class="form-group">
                     <label for="nome">Nome</label>
@@ -72,7 +76,7 @@
 
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" required th:value="${inviteEmail}" th:readonly="${inviteEmail != null}">
             </div>
 
             <div class="form-group">

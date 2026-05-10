@@ -68,6 +68,8 @@ public class SecurityConfig {
                                 "/h2-console/**",
                                 "/signin",
                                 "/auth/register",
+                                "/auth/verify",
+                                "/invite/accept",
                                 "/login"
                         ).permitAll()
                         .anyRequest().authenticated()
@@ -92,6 +94,8 @@ public class SecurityConfig {
                         "/classe/**",
                         "/classe",
                         "/classe-data",
+                        "/admin/institutions/**",
+                        "/admin/institutions",
                         "/subjects/**",
                         "/subjects",
                         "/materia-data"

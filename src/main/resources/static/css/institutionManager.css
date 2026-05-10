@@ -1,0 +1,258 @@
+:root {
+    --primary-blue: #1519FA;
+    --primary-purple: #6D00FE;
+    --text-color: #1f2937;
+    --bg-color: #f3f4f6;
+    --white: #ffffff;
+    --danger: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+    padding: 0.5rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--text-color);
+    background: var(--bg-color);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+    padding: 0.5rem 0.85rem;
+    border-radius: 10px;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+    box-shadow: 0 10px 15px -3px rgba(109, 0, 254, 0.2);
+}
+
+.header h1 {
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.username {
+    display: inline-block;
+    margin-top: 0.1rem;
+    color: rgba(255, 255, 255, 0.78);
+    font-weight: 600;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-link,
+.logout-btn {
+    padding: 0.28rem 0.55rem;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.76);
+    background: transparent;
+    text-decoration: none;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.nav-link:hover,
+.nav-link.active,
+.logout-btn:hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.logout-form {
+    display: flex;
+}
+
+.main-container {
+    display: grid;
+    gap: 0.7rem;
+}
+
+.section {
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.section h2 {
+    font-size: 0.92rem;
+    color: #111827;
+}
+
+.inline-form,
+.row-form {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.inline-form {
+    margin-bottom: 0.65rem;
+    flex-wrap: wrap;
+}
+
+input,
+select,
+button {
+    min-height: 2rem;
+    border-radius: 6px;
+    font: inherit;
+}
+
+input,
+select {
+    min-width: 150px;
+    padding: 0.42rem 0.55rem;
+    border: 1px solid #d1d5db;
+    background: #fff;
+}
+
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    padding: 0.42rem 0.65rem;
+    border: none;
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary-blue), var(--primary-purple));
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.btn-small {
+    min-height: 1.65rem;
+    padding: 0.26rem 0.48rem;
+    font-size: 0.68rem;
+}
+
+.danger {
+    background: var(--danger);
+}
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    vertical-align: middle;
+}
+
+th {
+    color: #4b5563;
+    background: #f9fafb;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+}
+
+td {
+    color: #1f2937;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.35rem;
+    padding: 0.12rem 0.42rem;
+    border-radius: 999px;
+    color: #374151;
+    background: #f3f4f6;
+    font-weight: 700;
+    font-size: 0.65rem;
+}
+
+.badge.ok {
+    color: #065f46;
+    background: #d1fae5;
+}
+
+.badge.warn {
+    color: #92400e;
+    background: #fef3c7;
+}
+
+.badge.muted {
+    color: #6b7280;
+    background: #e5e7eb;
+}
+
+.actions {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.empty {
+    padding: 1rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+.notice {
+    padding: 0.65rem 0.8rem;
+    border-radius: 8px;
+    font-weight: 700;
+}
+
+.notice.success {
+    color: #166534;
+    background: #ecfdf5;
+    border: 1px solid #86efac;
+}
+
+.notice.error {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+}
+
+@media (max-width: 780px) {
+    .header,
+    .inline-form {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .nav {
+        flex-wrap: wrap;
+    }
+
+    input,
+    select,
+    button {
+        width: 100%;
+    }
+}
