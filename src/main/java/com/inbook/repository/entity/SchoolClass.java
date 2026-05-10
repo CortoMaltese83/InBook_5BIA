@@ -35,6 +35,10 @@ public class SchoolClass {
     @JoinColumn(name = "docente_id", nullable = true)
     private AppUser docente;
 
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "institution_id", nullable = true)
+    private Institution institution;
+
     public SchoolClass() {}//è di default e non serve a niente :) (se lo togliete ci da errore)
 
     public SchoolClass(Long id, String nome, String anno, String sezione, String stato, Long created_at, Long updated_at, AppUser docente) {
@@ -61,6 +65,7 @@ public class SchoolClass {
         return updated_at;
     }
     public AppUser getDocente() { return docente; }
+    public Institution getInstitution() { return institution; }
 
     //SETTER
     public void setId(Long id) {this.id = id;}
@@ -71,4 +76,5 @@ public class SchoolClass {
     public void setCreated_at(Long created_at) {this.created_at = created_at;}
     public void setUpdated_at(Long updated_at) {this.updated_at = updated_at;}
     public void setDocente(AppUser docente) { this.docente = docente; }
+    public void setInstitution(Institution institution) { this.institution = institution; }
 }

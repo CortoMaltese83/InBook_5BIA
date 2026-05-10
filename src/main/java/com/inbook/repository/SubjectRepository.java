@@ -24,9 +24,17 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     @Query("""
             select s from Subject s
             join s.classe c
+            left join c.institution i
+            left join c.docente cd
+            left join cd.institution cdi
             left join s.docente d
             left join s.book b
             where (:classeId is null or c.id = :classeId)
+              and (
+                :institutionId is null
+                or i.id = :institutionId
+                or (i.id is null and cdi.id = :institutionId)
+              )
               and (
                 :bookStatus is null or :bookStatus = ''
                 or (:bookStatus = 'with_book' and s.book is not null)
@@ -48,6 +56,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
               )
             """)
     Page<Subject> searchSubjects(@Param("classeId") Long classeId,
+                                 @Param("institutionId") Long institutionId,
                                  @Param("search") String search,
                                  @Param("bookStatus") String bookStatus,
                                  Pageable pageable);

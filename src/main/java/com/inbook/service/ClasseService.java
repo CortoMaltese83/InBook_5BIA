@@ -1,7 +1,9 @@
 package com.inbook.service;
 
+import com.inbook.repository.InstitutionRepository;
 import com.inbook.repository.SchoolClassRepository;
 import com.inbook.repository.entity.AppUser;
+import com.inbook.repository.entity.Institution;
 import com.inbook.repository.entity.SchoolClass;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -12,27 +14,44 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class ClasseService {
     private final SchoolClassRepository repo;
+    private final InstitutionRepository institutionRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public ClasseService(SchoolClassRepository repo) {
+    public ClasseService(SchoolClassRepository repo, InstitutionRepository institutionRepository) {
         this.repo = repo;
+        this.institutionRepository = institutionRepository;
     }
 
     public SchoolClass addClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at) {
+        return addClass(nome, anno, sezione, stato, created_at, update_at, null, null);
+    }
 
+    public SchoolClass addClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at, AppUser creator) {
+        return addClass(nome, anno, sezione, stato, created_at, update_at, creator, null);
+    }
+
+    public SchoolClass addClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at, AppUser creator, Long institutionId) {
+        if (!canCreateClass(creator)) {
+            throw new org.springframework.security.access.AccessDeniedException("Per creare una classe devi essere associato a un istituto attivo.");
+        }
+
+        Institution institution = resolveClassInstitution(creator, institutionId);
         SchoolClass c = new SchoolClass();
         c.setNome(anno + sezione);
         c.setAnno(anno);
         c.setSezione(sezione);
         c.setStato(stato);
+        c.setInstitution(institution);
+        if (!isAdminUser(creator)) {
+            c.setDocente(creator);
+        }
         c.setCreated_at(created_at != null ? created_at : System.currentTimeMillis());
         c.setUpdated_at(update_at != null ? update_at : System.currentTimeMillis());
         return repo.save(c);
@@ -40,11 +59,18 @@ public class ClasseService {
     }
 
     public SchoolClass modifyClass(Long id, String nome, String anno, String sezione, String stato, Long update_at) {
+        return modifyClass(id, nome, anno, sezione, stato, update_at, null);
+    }
+
+    public SchoolClass modifyClass(Long id, String nome, String anno, String sezione, String stato, Long update_at, Long institutionId) {
         SchoolClass c = repo.findById(id).orElseThrow(() -> new RuntimeException("classe non trovata"));
         c.setNome(anno + sezione);
         c.setAnno(anno);
         c.setSezione(sezione);
         c.setStato(stato);
+        if (institutionId != null) {
+            c.setInstitution(requireActiveInstitution(institutionId));
+        }
         c.setUpdated_at(update_at != null ? update_at : System.currentTimeMillis());
         return repo.save(c);
     }
@@ -60,6 +86,15 @@ public class ClasseService {
     }
     public List<SchoolClass> getAllClasses() {
         return repo.findAll();
+    }
+
+    public List<Institution> listActiveInstitutions() {
+        if (institutionRepository == null) {
+            return List.of();
+        }
+        return institutionRepository.findAllByOrderByNameAsc().stream()
+                .filter(institution -> "ACTIVE".equalsIgnoreCase(institution.getStatus()))
+                .toList();
     }
 
     // --- Auth helpers (used by ClasseController) ---
@@ -78,6 +113,59 @@ public class ClasseService {
             throw new IllegalArgumentException("Utente non trovato: " + username);
         }
         return res.get(0);
+    }
+
+    public boolean canCreateClass(AppUser user) {
+        return isAdminUser(user) || hasActiveInstitution(user);
+    }
+
+    public boolean canManageClasses(AppUser user) {
+        return isAdminUser(user);
+    }
+
+    public Institution effectiveInstitution(SchoolClass schoolClass) {
+        if (schoolClass == null) {
+            return null;
+        }
+        if (schoolClass.getInstitution() != null) {
+            return schoolClass.getInstitution();
+        }
+        AppUser docente = schoolClass.getDocente();
+        return docente != null ? docente.getInstitution() : null;
+    }
+
+    private Institution resolveClassInstitution(AppUser creator, Long institutionId) {
+        if (isAdminUser(creator)) {
+            if (institutionId == null) {
+                throw new IllegalArgumentException("Istituto classe mancante");
+            }
+            return requireActiveInstitution(institutionId);
+        }
+        Institution institution = creator != null ? creator.getInstitution() : null;
+        if (institution == null || !"ACTIVE".equalsIgnoreCase(institution.getStatus())) {
+            throw new org.springframework.security.access.AccessDeniedException("Per creare una classe devi essere associato a un istituto attivo.");
+        }
+        return institution;
+    }
+
+    private Institution requireActiveInstitution(Long institutionId) {
+        if (institutionRepository == null) {
+            throw new IllegalStateException("Repository istituti non disponibile");
+        }
+        Institution institution = institutionRepository.findById(institutionId)
+                .orElseThrow(() -> new IllegalArgumentException("Istituto non trovato"));
+        if (!"ACTIVE".equalsIgnoreCase(institution.getStatus())) {
+            throw new IllegalArgumentException("Istituto non attivo");
+        }
+        return institution;
+    }
+
+    private boolean hasActiveInstitution(AppUser user) {
+        if (user == null || user.getInstitution() == null) {
+            return false;
+        }
+        String status = user.getInstitution().getStatus();
+        return status == null || "ACTIVE".equalsIgnoreCase(status);
     }
 
     private boolean isAdminUser(AppUser user) {
@@ -116,12 +204,7 @@ public class ClasseService {
         }
     }
 
-    /**
-     * Overload used by /classe-data:
-     * No association docente<->class: everyone sees all classes
-     */
     public List<SchoolClass> getAllClasses(Principal principal) {
-        // No association docente<->class: everyone sees all classes
         return getAllClasses();
     }
 
@@ -131,14 +214,24 @@ public class ClasseService {
         String cleanSearch = normalizeParam(search);
         String cleanStato = normalizeParam(stato);
 
-        Sort sort = Sort.by(
+        PageRequest pageable = PageRequest.of(safePage, safeSize, Sort.by(
                 Sort.Order.asc("stato"),
                 Sort.Order.asc("anno"),
                 Sort.Order.asc("sezione"),
                 Sort.Order.asc("nome")
-        );
+        ));
 
-        return repo.searchClasses(cleanSearch, cleanStato, PageRequest.of(safePage, safeSize, sort));
+        AppUser user = requireLoggedUser(principal);
+        Long institutionId = null;
+        if (!isAdminUser(user)) {
+            Institution institution = user.getInstitution();
+            if (institution == null || !"ACTIVE".equalsIgnoreCase(institution.getStatus())) {
+                return Page.empty(pageable);
+            }
+            institutionId = institution.getId();
+        }
+
+        return repo.searchClasses(cleanSearch, institutionId, cleanStato, pageable);
     }
 
     private String normalizeParam(String value) {
@@ -148,5 +241,3 @@ public class ClasseService {
         return value.trim();
     }
 }
-
-

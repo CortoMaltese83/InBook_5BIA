@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/css/classManager.css">
 </head>
 
-<body class="particle-bg" th:attr="data-can-manage=${canManageClasses}">
+<body class="particle-bg" th:attr="data-can-manage=${canManageClasses},data-can-create=${canCreateClasses}">
     <canvas id="particle-canvas"></canvas>
 
     <header class="header">
@@ -54,7 +54,7 @@
             <div class="toolbar-left">
                 <div class="search-box">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" id="class-search" placeholder="Cerca classe, anno, sezione o docente">
+                    <input type="search" id="class-search" placeholder="Cerca classe, anno, sezione, istituto o docente">
                 </div>
                 <select id="status-filter" class="toolbar-select" aria-label="Filtra per stato">
                     <option value="">Tutti gli stati</option>
@@ -74,12 +74,16 @@
             </div>
         </div>
         <div class="table-container">
+            <div class="create-notice" th:if="${!canCreateClasses}">
+                Per creare una classe devi essere associato a un istituto attivo.
+            </div>
             <table class="class-table">
                 <thead>
                     <tr>
                         <th>Nome</th>
                         <th>Anno</th>
                         <th>Sezione</th>
+                        <th>Istituto</th>
                         <th>Stato</th>
                         <th>Data Creazione</th>
                         <th>Data Aggiornamento</th>
@@ -103,7 +107,7 @@
     </main>
 
     <!-- Add Button -->
-    <button class="add-btn" id="add-btn" title="Aggiungi Classe" th:if="${canManageClasses}">
+    <button class="add-btn" id="add-btn" title="Aggiungi Classe" th:if="${canCreateClasses}">
         <i class="fa-solid fa-plus"></i> Aggiungi
     </button>
 
@@ -111,7 +115,7 @@
     <div class="modal-backdrop" id="modal-backdrop"></div>
 
     <!-- Add/Edit Modal -->
-    <div class="modal" id="form-modal" th:if="${canManageClasses}">
+    <div class="modal" id="form-modal" th:if="${canCreateClasses}">
         <h2 id="modal-title">Aggiungi Classe</h2>
         <form id="class-form" method="POST">
             <input type="hidden" id="class-id" name="id">
@@ -128,6 +132,15 @@
                     <label for="sezione">Sezione</label>
                     <input type="text" id="sezione" name="sezione" required placeholder="A">
                 </div>
+            </div>
+            <div class="form-group" th:if="${canManageClasses}">
+                <label for="institution-id">Istituto</label>
+                <select id="institution-id" name="institutionId" required>
+                    <option value="">Seleziona istituto</option>
+                    <option th:each="institution : ${institutions}"
+                            th:value="${institution.id}"
+                            th:text="${institution.name + ' (' + institution.code + ')'}"></option>
+                </select>
             </div>
             <div class="form-group">
                 <label for="stato">Stato</label>
@@ -171,6 +184,7 @@
 
     <script th:inline="javascript">
         window.CAN_MANAGE_CLASSES = /*[[${canManageClasses}]]*/ false;
+        window.CAN_CREATE_CLASSES = /*[[${canCreateClasses}]]*/ false;
     </script>
     <script src="/js/classManager.js"></script>
 </body>

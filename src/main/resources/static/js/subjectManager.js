@@ -13,6 +13,7 @@ const BOOK_LOOKUP_API_URL = '/book/lookup';
 let subjects = [];
 let selectedClassId = null;
 let selectedClassLabel = null;
+let canAddSubject = false;
 
 let editingId = null;
 let deleteId = null;
@@ -217,6 +218,10 @@ function updateSelectedClassDisplay() {
     el.textContent = '-';
 }
 
+function updateSubjectCreateAvailability() {
+    if (addBtn) addBtn.hidden = !canAddSubject;
+}
+
 
 // -------------------------
 // Load & Render
@@ -229,6 +234,7 @@ async function loadSubjects(classeId) {
 
         const data = await response.json();
         const items = Array.isArray(data) ? data : (data.items ?? []);
+        canAddSubject = !Array.isArray(data) && data.canAddSubject === true;
 
         // Extract class label from API response.
         // Requirement: show ONLY anno + sezione (e.g. "4 BIA"), never the class "nome" (e.g. "4BIA").
@@ -285,6 +291,7 @@ async function loadSubjects(classeId) {
                 s.hasBook ?? s.has_book ?? s.bookPresent ?? s.book_present ??
                 (s.book_id ?? s.bookId ?? (s.book ? (s.book.id ?? s.bookId ?? s.book_id) : null))
             ),
+            canEdit: Boolean(s.can_edit ?? s.canEdit),
             createdAt: s.created_at ?? s.createdAt,
             updatedAt: s.updated_at ?? s.updatedAt
         }));
@@ -301,10 +308,13 @@ async function loadSubjects(classeId) {
         }
 
         updateSelectedClassDisplay();
+        updateSubjectCreateAvailability();
         updatePagination();
         renderTable();
     } catch (error) {
         console.error('Error:', error);
+        canAddSubject = false;
+        updateSubjectCreateAvailability();
         if (tableBody) {
             tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #ef4444;">Errore nel caricamento dei dati: ${escapeHtml(error.message)}</td></tr>`;
         }
@@ -327,7 +337,9 @@ function renderTable() {
         const hasFilters = Boolean((searchInput && searchInput.value.trim()) || (bookStatusFilter && bookStatusFilter.value));
         const message = hasFilters
             ? 'Nessuna materia corrisponde ai filtri impostati.'
-            : 'Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.';
+            : (canAddSubject
+                ? 'Nessuna materia presente per questa classe. Clicca su "Aggiungi" per crearne una nuova.'
+                : 'Nessuna materia presente per questa classe.');
         tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 2rem; color: #6b7280;">${message}</td></tr>`;
         return;
     }
@@ -345,6 +357,13 @@ function renderTable() {
             : '<span title="Nessun libro" style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#ef4444;"></span>';
 
         const bookButtonTitle = s.hasBook ? 'Modifica libro associato' : 'Associa libro';
+        const actions = s.canEdit
+            ? `
+                <button class="action-btn btn-book" onclick="openBookModal(${s.id})" title="${bookButtonTitle}"><i class="fa-solid fa-book"></i></button>
+                <button class="action-btn btn-edit" onclick="openEditModal(${s.id})"><i class="fa-solid fa-pencil"></i></button>
+                <button class="action-btn btn-delete" onclick="openDeleteModal(${s.id})"><i class="fa-solid fa-trash"></i></button>
+            `
+            : '<span class="readonly-actions">Solo lettura</span>';
 
         tr.innerHTML = `
             <td><strong>${escapeHtml(s.nomeMateria)}</strong></td>
@@ -353,9 +372,7 @@ function renderTable() {
             <td>${s.createdAt ? formatDate(s.createdAt) : '-'}</td>
             <td>${s.updatedAt ? formatDate(s.updatedAt) : '-'}</td>
             <td>
-                <button class="action-btn btn-book" onclick="openBookModal(${s.id})" title="${bookButtonTitle}"><i class="fa-solid fa-book"></i></button>
-                <button class="action-btn btn-edit" onclick="openEditModal(${s.id})"><i class="fa-solid fa-pencil"></i></button>
-                <button class="action-btn btn-delete" onclick="openDeleteModal(${s.id})"><i class="fa-solid fa-trash"></i></button>
+                ${actions}
             </td>
         `;
 
@@ -425,6 +442,10 @@ function openAddModal() {
         alert('Classe non specificata nell’URL (?classeId=...).');
         return;
     }
+    if (!canAddSubject) {
+        alert('Non puoi aggiungere materie a questa classe.');
+        return;
+    }
 
     modalTitle.textContent = 'Aggiungi Materia';
     btnSave.textContent = 'Aggiungi';
@@ -453,6 +474,7 @@ function openEditModal(id) {
 
     const s = subjects.find(x => x.id === id);
     if (!s) return;
+    if (!s.canEdit) return;
 
     modalTitle.textContent = 'Modifica Materia';
     btnSave.textContent = 'Aggiorna';
@@ -476,6 +498,8 @@ function openEditModal(id) {
 
 function openDeleteModal(id) {
     deleteId = id;
+    const s = subjects.find(x => x.id === id);
+    if (!s || !s.canEdit) return;
     if (deleteSubjectIdInput) deleteSubjectIdInput.value = String(id);
     const deleteClasseIdInput = document.getElementById('delete-classe-id');
     if (deleteClasseIdInput) deleteClasseIdInput.value = String(getSelectedClassId() || '');
@@ -485,6 +509,7 @@ function openDeleteModal(id) {
 function openBookModal(id) {
     const s = subjects.find(x => x.id === id);
     if (!s) return;
+    if (!s.canEdit) return;
 
     if (bookSubjectIdInput) bookSubjectIdInput.value = String(id);
     if (bookClasseIdInput) bookClasseIdInput.value = String(getSelectedClassId() || s.classeId || '');
@@ -654,11 +679,13 @@ if (nextPageBtn) {
     if (!paramClassId || !Number.isFinite(paramClassId)) {
         selectedClassId = null;
         selectedClassLabel = null;
+        canAddSubject = false;
         subjects = [];
         totalItems = 0;
         totalPages = 0;
         currentPage = 0;
         updatePagination();
+        updateSubjectCreateAvailability();
         renderTable();
         return;
     }

@@ -3,6 +3,7 @@ package com.inbook.controller;
 import com.inbook.repository.entity.SchoolClass;
 import com.inbook.service.ClasseService;
 import com.inbook.repository.entity.AppUser;
+import com.inbook.repository.entity.Institution;
 import java.security.Principal;
 import org.springframework.data.domain.Page;
 import org.springframework.ui.Model;
@@ -27,25 +28,14 @@ public class ClasseController{
         this.service = service;
     }
 
-    private boolean isAdminUser(AppUser user) {
-        if (user == null) return false;
-        try {
-            String rolesObj = user.getRoles();
-            if (rolesObj == null) return false;
-
-            String up = rolesObj.toUpperCase();
-            return up.contains("ADMIN") || up.contains("TYPE_ADMIN");
-
-        } catch (Exception ignore) {
-        }
-        return false;
-    }
-
     @GetMapping("/admin/classes")
     public String classManager(Model model, Principal principal) {
         AppUser user = service.requireLoggedUser(principal);
-        boolean canManage = isAdminUser(user);
+        boolean canManage = service.canManageClasses(user);
+        boolean canCreate = service.canCreateClass(user);
         model.addAttribute("canManageClasses", canManage);
+        model.addAttribute("canCreateClasses", canCreate);
+        model.addAttribute("institutions", service.listActiveInstitutions());
         model.addAttribute("username", user.getUsername());
         return "classManager";
     }
@@ -55,12 +45,13 @@ public class ClasseController{
                            @RequestParam("anno") String anno,
                            @RequestParam("sezione") String sezione,
                            @RequestParam("stato") String stato,
+                           @RequestParam(value = "institutionId", required = false) Long institutionId,
                            Principal principal) {
         AppUser user = service.requireLoggedUser(principal);
-        if (!isAdminUser(user)) {
-            throw new org.springframework.security.access.AccessDeniedException("Forbidden");
+        if (!service.canCreateClass(user)) {
+            throw new org.springframework.security.access.AccessDeniedException("Per creare una classe devi essere associato a un istituto attivo.");
         }
-        service.addClass(nome, anno, sezione, stato, null, null);
+        service.addClass(nome, anno, sezione, stato, null, null, user, institutionId);
         return "redirect:/admin/classes";
     }
 
@@ -70,19 +61,20 @@ public class ClasseController{
                             @RequestParam("anno") String anno,
                             @RequestParam("sezione") String sezione,
                             @RequestParam("stato") String stato,
+                            @RequestParam(value = "institutionId", required = false) Long institutionId,
                             Principal principal) {
         AppUser user = service.requireLoggedUser(principal);
-        if (!isAdminUser(user)) {
+        if (!service.canManageClasses(user)) {
             throw new org.springframework.security.access.AccessDeniedException("Forbidden");
         }
-        service.modifyClass(id, nome, anno, sezione, stato, null);
+        service.modifyClass(id, nome, anno, sezione, stato, null, institutionId);
         return "redirect:/admin/classes";
     }
 
     @PostMapping("/classe/delete")
     public String deleteClass(@RequestParam("id") Long id, Principal principal) {
         AppUser user = service.requireLoggedUser(principal);
-        if (!isAdminUser(user)) {
+        if (!service.canManageClasses(user)) {
             throw new org.springframework.security.access.AccessDeniedException("Forbidden");
         }
         try {
@@ -143,6 +135,12 @@ public class ClasseController{
         map.put("anno", anno);
 
         map.put("sezione", c.getSezione());
+        Institution institution = service.effectiveInstitution(c);
+        if (institution != null) {
+            map.put("institution_id", institution.getId());
+            map.put("institution_name", institution.getName());
+            map.put("institution_code", institution.getCode());
+        }
         map.put("stato", c.getStato());
         map.put("created_at", c.getCreated_at());
         map.put("updated_at", c.getUpdated_at());

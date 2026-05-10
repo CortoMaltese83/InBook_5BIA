@@ -506,6 +506,12 @@ body {
     color: var(--danger);
 }
 
+.readonly-actions {
+    color: #6b7280;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
 /* Subject table column widths (6 colonne: Materia, Libro, Docente, Creazione, Aggiornamento, Azioni) */
 .subject-table th:nth-child(1),
 .subject-table td:nth-child(1) {

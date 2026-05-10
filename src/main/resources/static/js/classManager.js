@@ -2,6 +2,7 @@
 let classes = [];
 const API_URL = '/classe-data';
 const canManageClasses = window.CAN_MANAGE_CLASSES === true || document.body.dataset.canManage === 'true';
+const canCreateClasses = window.CAN_CREATE_CLASSES === true || document.body.dataset.canCreate === 'true';
 
 let editingId = null;
 let deleteId = null;
@@ -38,6 +39,7 @@ const nextPageBtn = document.getElementById('next-page');
 const nameInput = document.getElementById('nome');
 const yearInput = document.getElementById('class-anno');
 const sectionInput = document.getElementById('sezione');
+const institutionInput = document.getElementById('institution-id');
 const statusInput = document.getElementById('stato');
 const createdAtDisplay = document.getElementById('created-at-display');
 const updatedAtDisplay = document.getElementById('updated-at-display');
@@ -72,7 +74,7 @@ const escapeHtml = (str) => {
         .replaceAll("'", '&#039;');
 };
 
-const getTableColumnCount = () => canManageClasses ? 7 : 6;
+const getTableColumnCount = () => canManageClasses ? 8 : 7;
 
 function buildClassesUrl() {
     const params = new URLSearchParams();
@@ -102,6 +104,9 @@ async function loadClasses() {
             nome: cls.nome,
             anno: cls.anno,
             sezione: cls.sezione,
+            institutionId: cls.institution_id ?? cls.institutionId ?? null,
+            institutionName: cls.institution_name ?? cls.institutionName ?? null,
+            institutionCode: cls.institution_code ?? cls.institutionCode ?? null,
             stato: cls.stato,
             docenteNome: cls.docente_nome ?? cls.docenteNome ?? null,
             createdAt: cls.created_at,
@@ -133,7 +138,9 @@ function renderTable() {
         const hasFilters = Boolean((searchInput && searchInput.value.trim()) || (statusFilter && statusFilter.value));
         const message = hasFilters
             ? 'Nessuna classe corrisponde ai filtri impostati.'
-            : 'Nessuna classe presente. Clicca su "Aggiungi" per crearne una nuova.';
+            : (canCreateClasses
+                ? 'Nessuna classe presente. Clicca su "Aggiungi" per crearne una nuova.'
+                : 'Nessuna classe presente.');
         tableBody.innerHTML = `<tr><td colspan="${getTableColumnCount()}" style="text-align:center; padding: 2rem; color: #6b7280;">${message}</td></tr>`;
         return;
     }
@@ -163,6 +170,7 @@ function renderTable() {
             <td><strong>${escapeHtml(cls.nome)}</strong></td>
             <td>${escapeHtml(cls.anno)}</td>
             <td>${escapeHtml(cls.sezione)}</td>
+            <td>${escapeHtml(cls.institutionName || cls.institutionCode || 'Non associato')}</td>
             <td>${getStatusBadge(cls.stato)}</td>
             <td>${formatDate(cls.createdAt)}</td>
             <td>${formatDate(cls.updatedAt)}</td>
@@ -202,6 +210,7 @@ function openAddModal() {
     btnSave.textContent = "Aggiungi";
     classForm.action = "/classe";
     classIdInput.value = "";
+    if (institutionInput) institutionInput.value = "";
     showModal(formModal);
 }
 
@@ -227,6 +236,7 @@ function openEditModal(id) {
     nameInput.value = cls.nome;
     yearInput.value = cls.anno;
     sectionInput.value = cls.sezione;
+    if (institutionInput) institutionInput.value = cls.institutionId ? String(cls.institutionId) : "";
     statusInput.value = cls.stato;
 
     // Display existing dates immediately

@@ -2,10 +2,12 @@ package com.inbook.controller;
 
 
 import com.inbook.repository.entity.AppUser;
+import com.inbook.repository.entity.Institution;
 import com.inbook.repository.entity.SchoolClass;
 import com.inbook.repository.entity.Subject;
 import com.inbook.service.SubjectService;
 import org.springframework.data.domain.Page;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -121,13 +123,17 @@ public class SubjectController {
 
     @PostMapping("/subjects/delete")
     public String deleteSubject(@RequestParam("id") Long id,
-                                @RequestParam(name = "classeId", required = false) Long classeId) {
+                                @RequestParam(name = "classeId", required = false) Long classeId,
+                                Principal principal) {
         try {
-            subjectService.deleteSubject(id);
+            AppUser docente = subjectService.requireLoggedUser(principal);
+            subjectService.deleteSubject(id, docente);
             if (classeId != null) {
                 return "redirect:/subjects?classeId=" + classeId;
             }
             return "redirect:/subjects";
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -143,7 +149,9 @@ public class SubjectController {
                                 @RequestParam("casaEditrice") String casaEditrice,
                                 @RequestParam("prezzo") double prezzo,
                                 @RequestParam("daAcquistare") boolean daAcquistare,
-                                @RequestParam("consigliato") boolean consigliato) {
+                                @RequestParam("consigliato") boolean consigliato,
+                                Principal principal) {
+        AppUser docente = subjectService.requireLoggedUser(principal);
         subjectService.associateBook(
                 subjectId,
                 isbn,
@@ -153,7 +161,8 @@ public class SubjectController {
                 casaEditrice,
                 prezzo,
                 daAcquistare,
-                consigliato
+                consigliato,
+                docente
         );
         if (classeId != null) {
             return "redirect:/subjects?classeId=" + classeId;
@@ -167,17 +176,19 @@ public class SubjectController {
                                             @RequestParam(name = "page", defaultValue = "0") int page,
                                             @RequestParam(name = "size", defaultValue = "25") int size,
                                             @RequestParam(name = "search", required = false) String search,
-                                            @RequestParam(name = "bookStatus", required = false) String bookStatus) {
+                                            @RequestParam(name = "bookStatus", required = false) String bookStatus,
+                                            Principal principal) {
         try {
+            AppUser user = subjectService.requireLoggedUser(principal);
             System.out.println("DEBUG: Fetching subjects from service...");
-            Page<Subject> subjects = subjectService.getSubjectsPage(classeId, search, bookStatus, page, size);
+            Page<Subject> subjects = subjectService.getSubjectsPage(classeId, search, bookStatus, page, size, user);
             System.out.println("DEBUG: Found " + subjects.getTotalElements() + " subjects");
 
             List<Map<String, Object>> items = new ArrayList<>();
             if (subjects.hasContent()) {
                 for (Subject s : subjects.getContent()) {
                     try {
-                        items.add(toSubjectMap(s));
+                        items.add(toSubjectMap(s, user));
                     } catch (Exception rowEx) {
                         System.err.println("DEBUG: Error processing subject ID " + (s != null ? s.getId() : "null") + ": " + rowEx.getMessage());
                     }
@@ -190,16 +201,28 @@ public class SubjectController {
             response.put("size", subjects.getSize());
             response.put("totalItems", subjects.getTotalElements());
             response.put("totalPages", subjects.getTotalPages());
+            response.put("canAddSubject", false);
 
             if (classeId != null) {
                 SchoolClass classe = subjectService.requireClass(classeId);
+                if (!subjectService.canAccessClass(user, classe)) {
+                    throw new AccessDeniedException("Non puoi visualizzare questa classe.");
+                }
                 response.put("classeId", classe.getId());
                 response.put("classeLabel", buildClasseLabel(classe));
                 response.put("classeAnnoScolastico", asTrimmedString(tryInvoke(classe, "getAnno")));
                 response.put("classeSezione", asTrimmedString(tryInvoke(classe, "getSezione")));
+                Institution institution = subjectService.effectiveInstitution(classe);
+                if (institution != null) {
+                    response.put("classeInstitutionId", institution.getId());
+                    response.put("classeInstitutionName", institution.getName());
+                }
+                response.put("canAddSubject", subjectService.canAccessClass(user, classe));
             }
 
             return response;
+        } catch (AccessDeniedException e) {
+            throw e;
         } catch (Exception e) {
             System.err.println("DEBUG FATAL in viewSubjects: " + e.getMessage());
             e.printStackTrace();
@@ -207,7 +230,7 @@ public class SubjectController {
         }
     }
 
-    private Map<String, Object> toSubjectMap(Subject s) {
+    private Map<String, Object> toSubjectMap(Subject s, AppUser user) {
         Map<String, Object> map = new HashMap<>();
 
         map.put("id", s.getId());
@@ -263,6 +286,7 @@ public class SubjectController {
 
         map.put("created_at", s.getCreated_at());
         map.put("updated_at", s.getUpdated_at());
+        map.put("can_edit", subjectService.canModifySubject(user, s));
 
         return map;
     }
