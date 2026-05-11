@@ -93,3 +93,106 @@ Caused by: java.net.SocketException: Operation not permitted
 	at java.base/java.net.ServerSocket.<init>(ServerSocket.java:170)
 	at org.h2.util.NetUtils.createServerSocketTry(NetUtils.java:202)
 	... 59 more
+2026-05-11 11:53:18.695556+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "ND"; SQL statement:
+MERGE INTO book_lookup_cache (isbn, autore, titolo, volume, casa_editrice, prezzo, source, created_at, updated_at) KEY(isbn) SELECT CODICEISBN, LEFT(TRIM(AUTORI), 100), LEFT(CASE WHEN SOTTOTITOLO IS NULL OR TRIM(SOTTOTITOLO) = '' OR TRIM(SOTTOTITOLO) = 'ND' THEN TRIM(TITOLO) ELSE TRIM(TITOLO) || ' - ' || TRIM(SOTTOTITOLO) END, 300), CASE WHEN REGEXP_LIKE(TRIM(VOLUME), '^[0-9]+$') THEN CAST(TRIM(VOLUME) AS INT) ELSE NULL END, LEFT(TRIM(EDITORE), 100), CASE WHEN PREZZO IS NULL OR TRIM(PREZZO) = '' THEN NULL ELSE CAST(REPLACE(TRIM(PREZZO), ',', '.') AS DOUBLE) END, 'MIM_OPEN_DATA', DATEDIFF('MILLISECOND', TIMESTAMP '1970-01-01 00:00:00', CURRENT_TIMESTAMP()), DATEDIFF('MILLISECOND', TIMESTAMP '1970-01-01 00:00:00', CURRENT_TIMESTAMP()) FROM CSVREAD('/private/tmp/ALTMOLISE000020250910.csv') WHERE CODICEISBN IS NOT NULL AND LENGTH(REGEXP_REPLACE(CODICEISBN, '[^0-9]', '')) = 13 [22018-232]
+2026-05-11 11:53:32.634339+02:00 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "ND"; SQL statement:
+MERGE INTO book_lookup_cache (isbn, autore, titolo, volume, casa_editrice, prezzo, source, created_at, updated_at) KEY(isbn) SELECT CODICEISBN, LEFT(TRIM(AUTORI), 100), LEFT(CASE WHEN SOTTOTITOLO IS NULL OR TRIM(SOTTOTITOLO) = '' OR TRIM(SOTTOTITOLO) = 'ND' THEN TRIM(TITOLO) ELSE TRIM(TITOLO) || ' - ' || TRIM(SOTTOTITOLO) END, 300), CAST(NULLIF(REGEXP_REPLACE(TRIM(VOLUME), '[^0-9]', ''), '') AS INT), LEFT(TRIM(EDITORE), 100), CASE WHEN PREZZO IS NULL OR TRIM(PREZZO) = '' THEN NULL ELSE CAST(REPLACE(TRIM(PREZZO), ',', '.') AS DOUBLE) END, 'MIM_OPEN_DATA', DATEDIFF('MILLISECOND', TIMESTAMP '1970-01-01 00:00:00', CURRENT_TIMESTAMP()), DATEDIFF('MILLISECOND', TIMESTAMP '1970-01-01 00:00:00', CURRENT_TIMESTAMP()) FROM CSVREAD('/private/tmp/ALTMOLISE000020250910.csv') WHERE CODICEISBN IS NOT NULL AND LENGTH(REGEXP_REPLACE(CODICEISBN, '[^0-9]', '')) = 13 [22018-232]
+2026-05-11 11:56:08.584033+02:00 database: flush
+org.h2.message.DbException: General error: "org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]" [50000-232]
+	at org.h2.message.DbException.get(DbException.java:212)
+	at org.h2.message.DbException.convert(DbException.java:407)
+	at org.h2.mvstore.db.Store.lambda$new$0(Store.java:122)
+	at org.h2.mvstore.MVStore.handleException(MVStore.java:1546)
+	at org.h2.mvstore.MVStore.panic(MVStore.java:371)
+	at org.h2.mvstore.MVStore.<init>(MVStore.java:291)
+	at org.h2.mvstore.MVStore$Builder.open(MVStore.java:2035)
+	at org.h2.mvstore.db.Store.<init>(Store.java:133)
+	at org.h2.engine.Database.<init>(Database.java:326)
+	at org.h2.engine.Engine.openSession(Engine.java:92)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:344)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:124)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:291)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:273)
+	at org.h2.tools.Shell.runTool(Shell.java:146)
+	at org.h2.tools.Shell.main(Shell.java:80)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientException: General error: "org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]" [50000-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:566)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	... 18 more
+Caused by: org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]
+	at org.h2.mvstore.DataUtils.newMVStoreException(DataUtils.java:996)
+	at org.h2.mvstore.SingleFileStore.lockFileChannel(SingleFileStore.java:143)
+	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:117)
+	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
+	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
+	... 12 more
+2026-05-11 16:33:09.015421+02:00 database: opening /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb
+org.h2.message.DbException: IO Exception: "java.net.SocketException: Operation not permitted"; "port: 0 ssl: false" [90031-232]
+	at org.h2.message.DbException.convert(DbException.java:395)
+	at org.h2.engine.Database.startServer(Database.java:679)
+	at org.h2.engine.Database.<init>(Database.java:319)
+	at org.h2.engine.Engine.openSession(Engine.java:92)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:344)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:124)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:291)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:273)
+	at org.h2.tools.Shell.runTool(Shell.java:146)
+	at org.h2.tools.Shell.main(Shell.java:80)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientException: IO Exception: "java.net.SocketException: Operation not permitted"; "port: 0 ssl: false" [90031-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:566)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:212)
+	at org.h2.message.DbException.convertIOException(DbException.java:454)
+	at org.h2.util.NetUtils.createServerSocketTry(NetUtils.java:209)
+	at org.h2.util.NetUtils.createServerSocket(NetUtils.java:172)
+	at org.h2.server.TcpServer.start(TcpServer.java:241)
+	at org.h2.tools.Server.start(Server.java:551)
+	at org.h2.engine.Database.startServer(Database.java:677)
+	... 10 more
+Caused by: java.net.SocketException: Operation not permitted
+	at java.base/sun.nio.ch.Net.bind0(Native Method)
+	at java.base/sun.nio.ch.Net.bind(Net.java:555)
+	at java.base/sun.nio.ch.Net.bind(Net.java:544)
+	at java.base/sun.nio.ch.NioSocketImpl.bind(NioSocketImpl.java:648)
+	at java.base/java.net.ServerSocket.bind(ServerSocket.java:388)
+	at java.base/java.net.ServerSocket.<init>(ServerSocket.java:274)
+	at java.base/java.net.ServerSocket.<init>(ServerSocket.java:167)
+	at org.h2.util.NetUtils.createServerSocketTry(NetUtils.java:202)
+	... 14 more
+2026-05-11 16:36:31.408307+02:00 database: flush
+org.h2.message.DbException: General error: "org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]" [50000-232]
+	at org.h2.message.DbException.get(DbException.java:212)
+	at org.h2.message.DbException.convert(DbException.java:407)
+	at org.h2.mvstore.db.Store.lambda$new$0(Store.java:122)
+	at org.h2.mvstore.MVStore.handleException(MVStore.java:1546)
+	at org.h2.mvstore.MVStore.panic(MVStore.java:371)
+	at org.h2.mvstore.MVStore.<init>(MVStore.java:291)
+	at org.h2.mvstore.MVStore$Builder.open(MVStore.java:2035)
+	at org.h2.mvstore.db.Store.<init>(Store.java:133)
+	at org.h2.engine.Database.<init>(Database.java:326)
+	at org.h2.engine.Engine.openSession(Engine.java:92)
+	at org.h2.engine.Engine.openSession(Engine.java:222)
+	at org.h2.engine.Engine.createSession(Engine.java:201)
+	at org.h2.engine.SessionRemote.connectEmbeddedOrServer(SessionRemote.java:344)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:124)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:291)
+	at org.h2.util.JdbcUtils.getConnection(JdbcUtils.java:273)
+	at org.h2.tools.Shell.runTool(Shell.java:146)
+	at org.h2.tools.Shell.main(Shell.java:80)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientException: General error: "org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]" [50000-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:566)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	... 18 more
+Caused by: org.h2.mvstore.MVStoreException: The file is locked: /Users/francescolombardi/IdeaProjects/InBook_5BIA/data/appdb.mv.db [2.3.232/7]
+	at org.h2.mvstore.DataUtils.newMVStoreException(DataUtils.java:996)
+	at org.h2.mvstore.SingleFileStore.lockFileChannel(SingleFileStore.java:143)
+	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:117)
+	at org.h2.mvstore.SingleFileStore.open(SingleFileStore.java:81)
+	at org.h2.mvstore.MVStore.<init>(MVStore.java:286)
+	... 12 more

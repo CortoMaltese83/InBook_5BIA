@@ -141,7 +141,7 @@ function applyBookLookupResult(data) {
     }
 }
 
-async function lookupBookFromAie() {
+async function lookupBookFromCatalog() {
     if (!bookIsbnInput) return;
 
     const isbn = sanitizeIsbn(bookIsbnInput.value);
@@ -151,7 +151,7 @@ async function lookupBookFromAie() {
     }
 
     setBookLookupLoading(true);
-    setBookLookupStatus('Ricerca AIE in corso...', 'loading');
+    setBookLookupStatus('Ricerca nel catalogo locale...', 'loading');
 
     try {
         const response = await fetch(`${BOOK_LOOKUP_API_URL}?isbn=${encodeURIComponent(isbn)}`, {
@@ -168,10 +168,10 @@ async function lookupBookFromAie() {
         }
 
         applyBookLookupResult(payload);
-        setBookLookupStatus('Dati compilati da AIE.', 'success');
+        setBookLookupStatus(`Dati compilati dal catalogo ${payload.source ? `(${payload.source})` : 'locale'}.`, 'success');
     } catch (error) {
-        console.error('AIE lookup error:', error);
-        setBookLookupStatus(error.message || 'Ricerca AIE non riuscita.', 'error');
+        console.error('Book lookup error:', error);
+        setBookLookupStatus(error.message || 'Libro non trovato nel catalogo locale.', 'error');
     } finally {
         setBookLookupLoading(false);
     }
@@ -577,7 +577,7 @@ if (addBtn) addBtn.addEventListener('click', openAddModal);
 if (modalBackdrop) modalBackdrop.addEventListener('click', closeAllModals);
 
 if (bookLookupBtn) {
-    bookLookupBtn.addEventListener('click', lookupBookFromAie);
+    bookLookupBtn.addEventListener('click', lookupBookFromCatalog);
 }
 
 if (bookIsbnInput) {

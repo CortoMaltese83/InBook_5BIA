@@ -6,6 +6,8 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class DbUserDetailsService implements UserDetailsService {
 
@@ -17,8 +19,8 @@ public class DbUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        String cleanEmail = email == null ? "" : email.trim().toLowerCase();
-        AppUser u = repo.findByEmail(cleanEmail)
+        String cleanEmail = email == null ? "" : email.trim().toLowerCase(Locale.ITALIAN);
+        AppUser u = repo.findByEmailIgnoreCase(cleanEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + cleanEmail));
 
         return org.springframework.security.core.userdetails.User

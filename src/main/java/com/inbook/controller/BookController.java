@@ -2,7 +2,7 @@ package com.inbook.controller;
 
 import com.inbook.dto.Book;
 import com.inbook.dto.BookLookupResult;
-import com.inbook.service.AieBookLookupService;
+import com.inbook.service.BookLookupService;
 import com.inbook.service.BookService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,11 +22,11 @@ import java.util.Map;
 @Controller
 public class BookController {
     private BookService service;
-    private final AieBookLookupService aieBookLookupService;
+    private final BookLookupService bookLookupService;
 
-    public BookController(BookService service, AieBookLookupService aieBookLookupService){
+    public BookController(BookService service, BookLookupService bookLookupService){
         this.service=service;
-        this.aieBookLookupService = aieBookLookupService;
+        this.bookLookupService = bookLookupService;
     }
 
     private static Object tryInvoke(Object target, String methodName) {
@@ -134,7 +134,7 @@ public class BookController {
     @ResponseBody
     public ResponseEntity<Map<String, Object>> lookupBook(@RequestParam("isbn") String isbn) {
         try {
-            BookLookupResult result = aieBookLookupService.lookupByIsbn(isbn);
+            BookLookupResult result = bookLookupService.lookupByIsbn(isbn);
             Map<String, Object> response = new HashMap<>();
             response.put("isbn", result.getIsbn());
             response.put("autore", result.getAutore());
@@ -146,9 +146,9 @@ public class BookController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return error(HttpStatus.BAD_REQUEST, e.getMessage());
-        } catch (AieBookLookupService.AieBookNotFoundException e) {
+        } catch (BookLookupService.BookNotFoundException e) {
             return error(HttpStatus.NOT_FOUND, e.getMessage());
-        } catch (AieBookLookupService.AieLookupUnavailableException e) {
+        } catch (BookLookupService.BookLookupUnavailableException e) {
             return error(HttpStatus.BAD_GATEWAY, e.getMessage());
         }
     }

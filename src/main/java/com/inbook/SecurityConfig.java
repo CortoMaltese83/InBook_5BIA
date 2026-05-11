@@ -95,6 +95,7 @@ public class SecurityConfig {
                         "/classe/**",
                         "/classe",
                         "/classe-data",
+                        "/admin/books/import/**",
                         "/admin/institutions/**",
                         "/admin/institutions",
                         "/subjects/**",
