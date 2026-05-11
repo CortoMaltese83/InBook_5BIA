@@ -1,8 +1,10 @@
 package com.inbook.controller;
 
 import com.inbook.repository.entity.AppUser;
+import com.inbook.repository.entity.AdminAuditEvent;
 import com.inbook.service.InstitutionBookExportService;
 import com.inbook.service.InstitutionAdminService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -42,8 +44,35 @@ public class AdminInstitutionController {
         model.addAttribute("domains", service.listDomains());
         model.addAttribute("teachers", service.listTeachers());
         model.addAttribute("invitations", service.listInvitations());
-        model.addAttribute("auditEvents", service.latestAuditEvents());
+        model.addAttribute("auditEvents", service.latestAuditEvents(10));
         return "institutionManager";
+    }
+
+    @GetMapping("/admin/institutions/audit")
+    public String auditEvents(@RequestParam(name = "search", required = false) String search,
+                              @RequestParam(name = "action", required = false) String action,
+                              @RequestParam(name = "institutionId", required = false) String institutionIdParam,
+                              @RequestParam(name = "page", defaultValue = "0") int page,
+                              @RequestParam(name = "size", defaultValue = "25") int size,
+                              Model model,
+                              Principal principal) {
+        AppUser user = service.requireLoggedUser(principal);
+        if (!service.isAdmin(user)) {
+            throw new AccessDeniedException("Forbidden");
+        }
+
+        Long institutionId = parseOptionalLong(institutionIdParam);
+        Page<AdminAuditEvent> auditPage = service.searchAuditEvents(search, action, institutionId, page, size);
+        model.addAttribute("username", user.getUsername());
+        model.addAttribute("auditPage", auditPage);
+        model.addAttribute("auditEvents", auditPage.getContent());
+        model.addAttribute("institutions", service.listInstitutions());
+        model.addAttribute("auditActions", service.listAuditActions());
+        model.addAttribute("auditSearch", search);
+        model.addAttribute("selectedAction", action);
+        model.addAttribute("selectedInstitutionId", institutionId);
+        model.addAttribute("auditSize", Math.min(Math.max(size, 10), 100));
+        return "institutionAudit";
     }
 
     @GetMapping("/admin/institutions/{id}/books.xlsx")
@@ -144,6 +173,13 @@ public class AdminInstitutionController {
                                 RedirectAttributes redirectAttributes) {
         runAdminAction(redirectAttributes, () -> service.deleteTeacher(id, principal), "Docente cancellato definitivamente.");
         return "redirect:/admin/institutions";
+    }
+
+    private Long parseOptionalLong(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return Long.parseLong(value);
     }
 
     private void runAdminAction(RedirectAttributes redirectAttributes, Runnable action, String successMessage) {

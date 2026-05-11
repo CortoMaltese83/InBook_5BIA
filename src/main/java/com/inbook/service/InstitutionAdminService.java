@@ -2,6 +2,7 @@ package com.inbook.service;
 
 import com.inbook.repository.*;
 import com.inbook.repository.entity.*;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -89,7 +90,26 @@ public class InstitutionAdminService {
     }
 
     public List<AdminAuditEvent> latestAuditEvents() {
-        return auditRepository.findLatest(PageRequest.of(0, 100));
+        return latestAuditEvents(10);
+    }
+
+    public List<AdminAuditEvent> latestAuditEvents(int limit) {
+        return auditRepository.findLatest(PageRequest.of(0, Math.max(1, limit)));
+    }
+
+    public Page<AdminAuditEvent> searchAuditEvents(String search, String action, Long institutionId, int page, int size) {
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 10), 100);
+        return auditRepository.searchAuditEvents(
+                normalizeParam(search),
+                normalizeParam(action),
+                institutionId,
+                PageRequest.of(safePage, safeSize)
+        );
+    }
+
+    public List<String> listAuditActions() {
+        return auditRepository.findDistinctActions();
     }
 
     @Transactional
@@ -436,6 +456,13 @@ public class InstitutionAdminService {
     private String requireText(String value, String fieldName) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " mancante");
+        }
+        return value.trim();
+    }
+
+    private String normalizeParam(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
         }
         return value.trim();
     }

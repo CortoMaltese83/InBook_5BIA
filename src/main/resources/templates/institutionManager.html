@@ -19,6 +19,7 @@
     <nav class="nav">
         <a href="/admin/classes?stato=active" class="nav-link">Classi</a>
         <a href="/admin/institutions" class="nav-link active">Istituti</a>
+        <a href="/admin/institutions/audit" class="nav-link">Audit</a>
         <form class="logout-form" th:action="@{/logout}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <button type="submit" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
@@ -206,7 +207,10 @@
 
     <section class="section">
         <div class="section-header">
-            <h2>Audit</h2>
+            <h2>Audit recenti</h2>
+            <a class="section-link" href="/admin/institutions/audit">
+                Vedi tutti <i class="fa-solid fa-arrow-right"></i>
+            </a>
         </div>
         <div class="table-wrap">
             <table>
