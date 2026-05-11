@@ -63,7 +63,7 @@ public class InstitutionAdminService {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new IllegalArgumentException("Utente non autenticato");
         }
-        return userRepository.findByUsername(principal.getName())
+        return userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new IllegalArgumentException("Utente non trovato: " + principal.getName()));
     }
 
@@ -214,14 +214,13 @@ public class InstitutionAdminService {
     }
 
     @Transactional
-    public AppUser registerTeacher(String email, String rawPassword, String username, String name, String surname, String inviteToken) {
+    public AppUser registerTeacher(String email, String rawPassword, String name, String surname, String inviteToken) {
         String cleanEmail = normalizeEmail(email);
-        String cleanUsername = requireText(username, "Username");
         if (userRepository.existsByEmail(cleanEmail)) {
             throw new IllegalArgumentException("Email gia registrata");
         }
-        if (userRepository.existsByUsername(cleanUsername)) {
-            throw new IllegalArgumentException("Username gia registrato");
+        if (userRepository.existsByUsername(cleanEmail)) {
+            throw new IllegalArgumentException("Email gia registrata");
         }
 
         TeacherInvitation invitation = resolveInvitation(inviteToken, cleanEmail).orElse(null);
@@ -236,7 +235,7 @@ public class InstitutionAdminService {
         AppUser user = new AppUser();
         user.setEmail(cleanEmail);
         user.setPasswordHash(passwordEncoder.encode(requireText(rawPassword, "Password")));
-        user.setUsername(cleanUsername);
+        user.setUsername(cleanEmail);
         user.setName(requireText(name, "Nome"));
         user.setSurname(requireText(surname, "Cognome"));
         user.setRoles("TYPE_DOCENTE");

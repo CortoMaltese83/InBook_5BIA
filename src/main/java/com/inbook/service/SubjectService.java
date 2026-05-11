@@ -255,14 +255,14 @@ public class SubjectService {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new IllegalArgumentException("Utente non autenticato");
         }
-        String username = principal.getName();
+        String email = principal.getName();
 
         TypedQuery<AppUser> q = entityManager.createQuery(
-                "select u from AppUser u where u.username = :username", AppUser.class);
-        q.setParameter("username", username);
+                "select u from AppUser u where u.email = :email", AppUser.class);
+        q.setParameter("email", email);
 
         List<AppUser> res = q.getResultList();
-        if (res.isEmpty()) throw new IllegalArgumentException("Utente non trovato: " + username);
+        if (res.isEmpty()) throw new IllegalArgumentException("Utente non trovato: " + email);
         return res.get(0);
     }
 }

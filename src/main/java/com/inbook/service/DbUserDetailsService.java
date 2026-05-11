@@ -16,12 +16,13 @@ public class DbUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser u = repo.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        String cleanEmail = email == null ? "" : email.trim().toLowerCase();
+        AppUser u = repo.findByEmail(cleanEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + cleanEmail));
 
         return org.springframework.security.core.userdetails.User
-                .withUsername(u.getUsername())
+                .withUsername(u.getEmail())
                 .password(u.getPasswordHash())
                 .authorities(AuthorityUtils.commaSeparatedStringToAuthorityList(u.getRoles()))
                 .disabled(!u.isEnabled())
@@ -31,7 +32,7 @@ public class DbUserDetailsService implements UserDetailsService {
     public AppUser registerUser(String email, String passwordHash, String username, String name, String surname, String roles, boolean enabled){
         AppUser u = new AppUser();
 
-        u.setUsername(username);
+        u.setUsername(email);
         u.setPasswordHash(passwordHash);
         u.setName(name);
         u.setSurname(surname);
