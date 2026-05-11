@@ -5,15 +5,13 @@ public class Docente {
     private String password;
     private  String name;
     private String surname;
-    private String username;
     public Docente() {
     }
-    public Docente(String email, String password, String name, String surname, String username) {
+    public Docente(String email, String password, String name, String surname) {
         this.email = email;
         this.password = password;
         this.name = name;
         this.surname = surname;
-        this.username = username;
     }
 
     public void setEmail(String email) {
@@ -32,9 +30,6 @@ public class Docente {
         this.surname = surname;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
 //d
     public String getEmail() {
         return email;
@@ -45,6 +40,5 @@ public class Docente {
     }
     public String getName() {return name;}
     public String getSurname() {return surname;}
-    public String getUsername() {return username;}
 
 }
