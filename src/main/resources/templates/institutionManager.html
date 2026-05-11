@@ -186,6 +186,16 @@
                             <input type="hidden" name="id" th:value="${teacher.id}">
                             <button type="submit" class="btn-small">Riattiva</button>
                         </form>
+                        <form action="/admin/institutions/teachers/delete" method="post">
+                            <input type="hidden" name="id" th:value="${teacher.id}">
+                            <button type="submit"
+                                    class="btn-small danger"
+                                    title="Elimina definitivamente docente"
+                                    aria-label="Elimina definitivamente docente"
+                                    onclick="return confirm('Cancellare definitivamente questo docente? Verranno eliminate le materie associate e le classi saranno scollegate.');">
+                                <i class="fa-solid fa-trash"></i> Elimina
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(teachers)}"><td colspan="6" class="empty">Nessun docente registrato.</td></tr>

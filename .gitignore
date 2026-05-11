@@ -39,3 +39,8 @@ build/
 ### Mac OS ###
 .DS_Store
 
+### Local configuration / secrets ###
+/config/application*.properties
+!/config/application-example.properties
+.env
+.env.*

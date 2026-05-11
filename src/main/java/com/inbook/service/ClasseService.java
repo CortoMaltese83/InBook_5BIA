@@ -1,10 +1,13 @@
 package com.inbook.service;
 
+import com.inbook.repository.BookRepository;
 import com.inbook.repository.InstitutionRepository;
 import com.inbook.repository.SchoolClassRepository;
+import com.inbook.repository.SubjectRepository;
 import com.inbook.repository.entity.AppUser;
 import com.inbook.repository.entity.Institution;
 import com.inbook.repository.entity.SchoolClass;
+import com.inbook.repository.entity.Subject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -12,21 +15,31 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class ClasseService {
     private final SchoolClassRepository repo;
     private final InstitutionRepository institutionRepository;
+    private final SubjectRepository subjectRepository;
+    private final BookRepository bookRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public ClasseService(SchoolClassRepository repo, InstitutionRepository institutionRepository) {
+    public ClasseService(SchoolClassRepository repo,
+                         InstitutionRepository institutionRepository,
+                         SubjectRepository subjectRepository,
+                         BookRepository bookRepository) {
         this.repo = repo;
         this.institutionRepository = institutionRepository;
+        this.subjectRepository = subjectRepository;
+        this.bookRepository = bookRepository;
     }
 
     public SchoolClass addClass(String nome, String anno, String sezione, String stato, Long created_at, Long update_at) {
@@ -75,14 +88,35 @@ public class ClasseService {
         return repo.save(c);
     }
 
+    @Transactional
     public void deleteClass(Long id){
-        if (repo.existsById(id)){
-            repo.deleteById(id);
-        }
-        else{
-            throw new RuntimeException("classe non trovata");
+        SchoolClass schoolClass = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("classe non trovata"));
+
+        List<Subject> subjects = subjectRepository.findByClasse_Id(id);
+        Set<String> candidateBookIsbns = new LinkedHashSet<>();
+        for (Subject subject : subjects) {
+            if (subject.getBook() != null && subject.getBook().getIsbn() != null) {
+                candidateBookIsbns.add(subject.getBook().getIsbn());
+            }
         }
 
+        subjectRepository.deleteAll(subjects);
+        subjectRepository.flush();
+
+        repo.delete(schoolClass);
+        repo.flush();
+
+        deleteUnreferencedBooks(candidateBookIsbns);
+
+    }
+
+    private void deleteUnreferencedBooks(Set<String> candidateBookIsbns) {
+        for (String isbn : candidateBookIsbns) {
+            if (!subjectRepository.existsByBook_Isbn(isbn)) {
+                bookRepository.deleteByIsbn(isbn);
+            }
+        }
     }
     public List<SchoolClass> getAllClasses() {
         return repo.findAll();

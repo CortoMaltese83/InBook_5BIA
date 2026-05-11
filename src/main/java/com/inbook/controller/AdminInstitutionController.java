@@ -138,6 +138,14 @@ public class AdminInstitutionController {
         return "redirect:/admin/institutions";
     }
 
+    @PostMapping("/admin/institutions/teachers/delete")
+    public String deleteTeacher(@RequestParam("id") Long id,
+                                Principal principal,
+                                RedirectAttributes redirectAttributes) {
+        runAdminAction(redirectAttributes, () -> service.deleteTeacher(id, principal), "Docente cancellato definitivamente.");
+        return "redirect:/admin/institutions";
+    }
+
     private void runAdminAction(RedirectAttributes redirectAttributes, Runnable action, String successMessage) {
         try {
             action.run();

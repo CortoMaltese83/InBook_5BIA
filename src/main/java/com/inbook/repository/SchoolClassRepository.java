@@ -7,12 +7,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 public interface SchoolClassRepository extends JpaRepository<SchoolClass, Long> {
 
     Optional<SchoolClass> findById(Long id);
     boolean existsById(Long id);
     void deleteById(Long id);
+    List<SchoolClass> findByDocente_Id(Long docenteId);
 
     @Query("""
             select c from SchoolClass c

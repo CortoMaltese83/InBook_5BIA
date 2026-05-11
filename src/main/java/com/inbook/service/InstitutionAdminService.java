@@ -32,6 +32,8 @@ public class InstitutionAdminService {
     private final TeacherInvitationRepository invitationRepository;
     private final AdminAuditEventRepository auditRepository;
     private final AppUserRepository userRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final SubjectRepository subjectRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationService notificationService;
     private final SecureRandom secureRandom = new SecureRandom();
@@ -41,6 +43,8 @@ public class InstitutionAdminService {
                                    TeacherInvitationRepository invitationRepository,
                                    AdminAuditEventRepository auditRepository,
                                    AppUserRepository userRepository,
+                                   SchoolClassRepository schoolClassRepository,
+                                   SubjectRepository subjectRepository,
                                    PasswordEncoder passwordEncoder,
                                    NotificationService notificationService) {
         this.institutionRepository = institutionRepository;
@@ -48,6 +52,8 @@ public class InstitutionAdminService {
         this.invitationRepository = invitationRepository;
         this.auditRepository = auditRepository;
         this.userRepository = userRepository;
+        this.schoolClassRepository = schoolClassRepository;
+        this.subjectRepository = subjectRepository;
         this.passwordEncoder = passwordEncoder;
         this.notificationService = notificationService;
     }
@@ -74,7 +80,7 @@ public class InstitutionAdminService {
 
     public List<AppUser> listTeachers() {
         return userRepository.findAllByOrderBySurnameAscNameAsc().stream()
-                .filter(user -> user.getRoles() != null && user.getRoles().toUpperCase(Locale.ITALIAN).contains("DOCENTE"))
+                .filter(this::isTeacher)
                 .toList();
     }
 
@@ -292,6 +298,46 @@ public class InstitutionAdminService {
         audit(actor, user.getInstitution(), user, "TEACHER_REACTIVATE", user.getEmail());
     }
 
+    @Transactional
+    public void deleteTeacher(Long userId, Principal principal) {
+        AppUser actor = requireAdmin(principal);
+        AppUser user = requireUser(userId);
+        if (!isTeacher(user)) {
+            throw new IllegalArgumentException("L'utente selezionato non e un docente");
+        }
+        if (isAdmin(user)) {
+            throw new IllegalArgumentException("Non puoi cancellare un amministratore da questa sezione");
+        }
+        if (actor.getId() != null && actor.getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Non puoi cancellare il tuo account mentre sei collegato");
+        }
+
+        Institution institution = user.getInstitution();
+        String email = user.getEmail();
+        List<Subject> subjects = subjectRepository.findByDocente_Id(user.getId());
+        List<SchoolClass> classes = schoolClassRepository.findByDocente_Id(user.getId());
+
+        subjectRepository.deleteAll(subjects);
+
+        long now = System.currentTimeMillis();
+        for (SchoolClass schoolClass : classes) {
+            if (schoolClass.getInstitution() == null && institution != null) {
+                schoolClass.setInstitution(institution);
+            }
+            schoolClass.setDocente(null);
+            schoolClass.setUpdated_at(now);
+        }
+        schoolClassRepository.saveAll(classes);
+
+        invitationRepository.clearInvitedBy(user.getId());
+        auditRepository.clearActor(user.getId());
+        auditRepository.clearTargetUser(user.getId());
+        userRepository.delete(user);
+
+        audit(actor, institution, null, "TEACHER_DELETE",
+                email + " (materie eliminate: " + subjects.size() + ", classi scollegate: " + classes.size() + ")");
+    }
+
     public Optional<TeacherInvitation> findInvitationByToken(String token) {
         if (token == null || token.isBlank()) {
             return Optional.empty();
@@ -336,6 +382,12 @@ public class InstitutionAdminService {
         }
         return userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utente non trovato"));
+    }
+
+    private boolean isTeacher(AppUser user) {
+        return user != null
+                && user.getRoles() != null
+                && user.getRoles().toUpperCase(Locale.ITALIAN).contains("DOCENTE");
     }
 
     private void audit(AppUser actor, Institution institution, AppUser targetUser, String action, String details) {
