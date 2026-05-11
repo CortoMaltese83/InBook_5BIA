@@ -55,7 +55,7 @@ public class InstitutionBookExportService {
         if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
             throw new IllegalArgumentException("Utente non autenticato");
         }
-        AppUser user = userRepository.findByUsername(principal.getName())
+        AppUser user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new IllegalArgumentException("Utente non trovato: " + principal.getName()));
         if (user.getRoles() == null || !user.getRoles().toUpperCase(Locale.ITALIAN).contains("ADMIN")) {
             throw new AccessDeniedException("Forbidden");
@@ -129,7 +129,7 @@ public class InstitutionBookExportService {
         }
         String fullName = ((teacher.getName() != null ? teacher.getName() : "") + " "
                 + (teacher.getSurname() != null ? teacher.getSurname() : "")).trim();
-        return !fullName.isBlank() ? fullName : teacher.getUsername();
+        return !fullName.isBlank() ? fullName : teacher.getEmail();
     }
 
     private String filenamePart(Institution institution) {

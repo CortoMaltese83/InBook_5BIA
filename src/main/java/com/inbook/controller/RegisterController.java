@@ -28,7 +28,6 @@ public class RegisterController {
             institutionAdminService.registerTeacher(
                     d.getEmail(),
                     d.getPassword(),
-                    d.getUsername(),
                     d.getName(),
                     d.getSurname(),
                     inviteToken

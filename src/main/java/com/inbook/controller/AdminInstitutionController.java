@@ -39,7 +39,7 @@ public class AdminInstitutionController {
             throw new AccessDeniedException("Forbidden");
         }
 
-        model.addAttribute("username", user.getUsername());
+        model.addAttribute("username", user.getEmail());
         model.addAttribute("institutions", service.listInstitutions());
         model.addAttribute("domains", service.listDomains());
         model.addAttribute("teachers", service.listTeachers());
@@ -63,7 +63,7 @@ public class AdminInstitutionController {
 
         Long institutionId = parseOptionalLong(institutionIdParam);
         Page<AdminAuditEvent> auditPage = service.searchAuditEvents(search, action, institutionId, page, size);
-        model.addAttribute("username", user.getUsername());
+        model.addAttribute("username", user.getEmail());
         model.addAttribute("auditPage", auditPage);
         model.addAttribute("auditEvents", auditPage.getContent());
         model.addAttribute("institutions", service.listInstitutions());

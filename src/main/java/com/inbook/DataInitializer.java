@@ -13,13 +13,13 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initUsers(AppUserRepository repo, PasswordEncoder encoder) {
         return args -> {
-            if (repo.findByUsername("admin").isEmpty()) {
+            if (repo.findByEmail("admin@gmail.com").isEmpty()) {
                 repo.save(new AppUser(
                         "admin@gmail.com",
                         encoder.encode("admin123"),
                         "admin0",
                         "ad0",
-                        "admin",
+                        "admin@gmail.com",
                         "TYPE_ADMIN",
                         true
                 ));

@@ -219,7 +219,7 @@
                 <tr th:each="event : ${auditEvents}">
                     <td th:text="${event.created_at}">-</td>
                     <td th:text="${event.action}">azione</td>
-                    <td th:text="${event.actor != null ? event.actor.username : 'sistema'}">attore</td>
+                    <td th:text="${event.actor != null ? event.actor.email : 'sistema'}">attore</td>
                     <td th:text="${event.targetUser != null ? event.targetUser.email : '-'}">target</td>
                     <td th:text="${event.details}">dettagli</td>
                 </tr>

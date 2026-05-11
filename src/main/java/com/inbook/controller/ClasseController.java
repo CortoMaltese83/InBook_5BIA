@@ -36,7 +36,7 @@ public class ClasseController{
         model.addAttribute("canManageClasses", canManage);
         model.addAttribute("canCreateClasses", canCreate);
         model.addAttribute("institutions", service.listActiveInstitutions());
-        model.addAttribute("username", user.getUsername());
+        model.addAttribute("username", user.getEmail());
         return "classManager";
     }
 
@@ -153,7 +153,7 @@ public class ClasseController{
             if (!fullName.isBlank()) {
                 map.put("docente_nome", fullName);
             } else {
-                map.put("docente_nome", c.getDocente().getUsername());
+                map.put("docente_nome", c.getDocente().getEmail());
             }
         }
 
