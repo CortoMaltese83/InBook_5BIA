@@ -7,6 +7,7 @@ import com.inbook.repository.BookLookupCacheRepository;
 import com.inbook.repository.entity.BookLookupCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,7 @@ public class BookLookupService {
     private final List<RemoteBookLookupProvider> remoteProviders;
     private final boolean remoteEnabled;
 
+    @Autowired
     public BookLookupService(BookLookupCacheRepository cacheRepository,
                              ObjectMapper objectMapper,
                              @Value("${inbook.book-lookup.remote-enabled:true}") boolean remoteEnabled,
@@ -51,41 +53,52 @@ public class BookLookupService {
         this.remoteEnabled = remoteEnabled;
     }
 
-    BookLookupService() {
-        this.cacheRepository = null;
-        this.remoteProviders = List.of();
-        this.remoteEnabled = false;
+    public BookLookupResult lookupByIsbn(String isbn) {
+        return lookupByIsbnWithTrace(isbn).result();
     }
 
-    public BookLookupResult lookupByIsbn(String isbn) {
+    public LookupTrace lookupByIsbnWithTrace(String isbn) {
         String cleanIsbn = normalizeLookupIsbn(isbn);
+        List<LookupStep> steps = new ArrayList<>();
         Optional<BookLookupResult> cachedBook = lookupCachedBook(cleanIsbn);
         if (cachedBook.isPresent()) {
-            return cachedBook.get();
+            steps.add(new LookupStep("LOCAL_CACHE", "FOUND", null));
+            return new LookupTrace(cleanIsbn, cachedBook.get(), steps);
         }
+        steps.add(new LookupStep("LOCAL_CACHE", "MISS", null));
 
         if (!remoteEnabled || remoteProviders.isEmpty()) {
-            throw notFound();
+            steps.add(new LookupStep("REMOTE_LOOKUP", "SKIPPED", "Fallback remota disabilitata o non configurata."));
+            throw notFound(cleanIsbn, steps);
         }
 
         int technicalFailures = 0;
         for (RemoteBookLookupProvider provider : remoteProviders) {
             try {
-                Optional<BookLookupResult> remoteBook = provider.lookup(cleanIsbn)
-                        .filter(result -> cleanIsbn.equals(normalizeIsbn(result.getIsbn())));
+                Optional<BookLookupResult> remoteBook = provider.lookup(cleanIsbn);
                 if (remoteBook.isPresent()) {
-                    return cacheRemoteResult(cleanIsbn, remoteBook.get());
+                    BookLookupResult result = remoteBook.get();
+                    String resultIsbn = normalizeIsbn(result.getIsbn());
+                    if (cleanIsbn.equals(resultIsbn)) {
+                        steps.add(new LookupStep(provider.name(), "FOUND", null));
+                        return new LookupTrace(cleanIsbn, cacheRemoteResult(cleanIsbn, result), steps);
+                    }
+                    steps.add(new LookupStep(provider.name(), "DISCARDED",
+                            "ISBN restituito diverso: " + (resultIsbn.isBlank() ? "-" : resultIsbn)));
+                } else {
+                    steps.add(new LookupStep(provider.name(), "MISS", null));
                 }
             } catch (RemoteLookupException e) {
                 technicalFailures++;
+                steps.add(new LookupStep(provider.name(), "ERROR", e.getMessage()));
                 log.warn("Catalogo remoto libri non disponibile provider={}: {}", provider.name(), e.getMessage());
             }
         }
 
         if (technicalFailures == remoteProviders.size()) {
-            throw new BookLookupUnavailableException("Cataloghi remoti temporaneamente non disponibili.");
+            throw new BookLookupUnavailableException("Cataloghi remoti temporaneamente non disponibili.", cleanIsbn, steps);
         }
-        throw notFound();
+        throw notFound(cleanIsbn, steps);
     }
 
     private Optional<BookLookupResult> lookupCachedBook(String isbn) {
@@ -127,9 +140,11 @@ public class BookLookupService {
         );
     }
 
-    private BookNotFoundException notFound() {
+    private BookNotFoundException notFound(String normalizedIsbn, List<LookupStep> steps) {
         return new BookNotFoundException(
-                "Libro non trovato nel catalogo locale o nelle fallback gratuite. Compila i dati manualmente."
+                "Libro non trovato nel catalogo locale o nelle fallback gratuite. Compila i dati manualmente.",
+                normalizedIsbn,
+                steps
         );
     }
 
@@ -322,6 +337,15 @@ public class BookLookupService {
         return cleaned.substring(0, maxLength);
     }
 
+    public record LookupTrace(String normalizedIsbn, BookLookupResult result, List<LookupStep> steps) {
+        public LookupTrace {
+            steps = steps == null ? List.of() : List.copyOf(steps);
+        }
+    }
+
+    public record LookupStep(String provider, String status, String reason) {
+    }
+
     @FunctionalInterface
     interface RemoteBookLookupProvider {
         Optional<BookLookupResult> lookup(String isbn);
@@ -482,14 +506,48 @@ public class BookLookupService {
     }
 
     public static class BookNotFoundException extends RuntimeException {
+        private final String normalizedIsbn;
+        private final List<LookupStep> steps;
+
         public BookNotFoundException(String message) {
+            this(message, null, List.of());
+        }
+
+        public BookNotFoundException(String message, String normalizedIsbn, List<LookupStep> steps) {
             super(message);
+            this.normalizedIsbn = normalizedIsbn;
+            this.steps = steps == null ? List.of() : List.copyOf(steps);
+        }
+
+        public String getNormalizedIsbn() {
+            return normalizedIsbn;
+        }
+
+        public List<LookupStep> getSteps() {
+            return steps;
         }
     }
 
     public static class BookLookupUnavailableException extends RuntimeException {
+        private final String normalizedIsbn;
+        private final List<LookupStep> steps;
+
         public BookLookupUnavailableException(String message) {
+            this(message, null, List.of());
+        }
+
+        public BookLookupUnavailableException(String message, String normalizedIsbn, List<LookupStep> steps) {
             super(message);
+            this.normalizedIsbn = normalizedIsbn;
+            this.steps = steps == null ? List.of() : List.copyOf(steps);
+        }
+
+        public String getNormalizedIsbn() {
+            return normalizedIsbn;
+        }
+
+        public List<LookupStep> getSteps() {
+            return steps;
         }
     }
 

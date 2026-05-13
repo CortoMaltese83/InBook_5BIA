@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BookLookupServiceTest {
-    private final BookLookupService service = new BookLookupService();
+    private final BookLookupService service = new BookLookupService(null, List.of(), false);
 
     @Test
     void keepsValidThirteenDigitIsbn() {

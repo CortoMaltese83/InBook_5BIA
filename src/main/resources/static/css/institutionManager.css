@@ -284,9 +284,55 @@ td {
     font-weight: 700;
 }
 
+.action-grid {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.45rem;
+    margin-bottom: 0.75rem;
+}
+
+.metrics-grid div {
+    display: grid;
+    gap: 0.18rem;
+    min-height: 3.2rem;
+    padding: 0.55rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #f9fafb;
+}
+
+.metrics-grid strong {
+    color: #6b7280;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+}
+
+.metrics-grid span {
+    color: #111827;
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+.compact-header {
+    margin-top: 0.8rem;
+}
+
+.url-cell,
+.reason-cell {
+    max-width: 520px;
+    overflow-wrap: anywhere;
+}
+
 @media (max-width: 780px) {
     .header,
     .inline-form,
+    .action-grid,
     .section-header,
     .pager {
         align-items: stretch;

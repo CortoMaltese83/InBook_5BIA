@@ -19,6 +19,7 @@
     <nav class="nav">
         <a href="/admin/classes?stato=active" class="nav-link">Classi</a>
         <a href="/admin/institutions" class="nav-link active">Istituti</a>
+        <a href="/admin/books/import" class="nav-link">Import Libri</a>
         <a href="/admin/institutions/audit" class="nav-link">Audit</a>
         <form class="logout-form" th:action="@{/logout}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />

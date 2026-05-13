@@ -1,7 +1,14 @@
 package com.inbook.service;
 
 import com.inbook.repository.BookLookupCacheRepository;
+import com.inbook.repository.BookImportRunItemRepository;
+import com.inbook.repository.BookImportRunRepository;
+import com.inbook.repository.BookImportRunSourceRepository;
+import com.inbook.repository.entity.AppUser;
 import com.inbook.repository.entity.BookLookupCache;
+import com.inbook.repository.entity.BookImportRun;
+import com.inbook.repository.entity.BookImportRunItem;
+import com.inbook.repository.entity.BookImportRunSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,20 +42,33 @@ import java.util.regex.Pattern;
 public class MimBookCatalogImportService {
     private static final Logger log = LoggerFactory.getLogger(MimBookCatalogImportService.class);
     private static final int BATCH_SIZE = 500;
+    private static final String RUN_TYPE = "MIM_OPEN_DATA_IMPORT";
     private static final Pattern INTEGER_PATTERN = Pattern.compile("\\d+");
     private static final Pattern PRICE_PATTERN = Pattern.compile("\\d+(?:[.,]\\d{1,2})?");
 
     private final BookLookupCacheRepository cacheRepository;
+    private final BookImportRunRepository runRepository;
+    private final BookImportRunSourceRepository sourceRepository;
+    private final BookImportRunItemRepository itemRepository;
     private final HttpClient httpClient;
     private final List<String> configuredSources;
     private final boolean scheduledImportEnabled;
+    private final int maxDiscardedItems;
 
     public MimBookCatalogImportService(BookLookupCacheRepository cacheRepository,
+                                       BookImportRunRepository runRepository,
+                                       BookImportRunSourceRepository sourceRepository,
+                                       BookImportRunItemRepository itemRepository,
                                        @Value("${inbook.mim-books.csv-urls:}") String csvUrls,
-                                       @Value("${inbook.mim-books.scheduled-enabled:false}") boolean scheduledImportEnabled) {
+                                       @Value("${inbook.mim-books.scheduled-enabled:false}") boolean scheduledImportEnabled,
+                                       @Value("${inbook.import-report.max-discarded-items:500}") int maxDiscardedItems) {
         this.cacheRepository = cacheRepository;
+        this.runRepository = runRepository;
+        this.sourceRepository = sourceRepository;
+        this.itemRepository = itemRepository;
         this.configuredSources = parseConfiguredSources(csvUrls);
         this.scheduledImportEnabled = scheduledImportEnabled;
+        this.maxDiscardedItems = Math.max(0, maxDiscardedItems);
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(20))
                 .followRedirects(HttpClient.Redirect.NORMAL)
@@ -60,36 +80,61 @@ public class MimBookCatalogImportService {
         if (!scheduledImportEnabled || configuredSources.isEmpty()) {
             return;
         }
-        ImportSummary summary = importConfiguredSources();
+        BookImportRun run = importConfiguredSourcesWithRun(null);
         log.info("Import catalogo MIM completato. Sorgenti={}, righe={}, salvati={}, saltati={}",
-                summary.sources(), summary.rowsRead(), summary.saved(), summary.skipped());
+                run.getSourceCount(), run.getRowsRead(), run.getSaved(), run.getSkipped());
     }
 
     public ImportSummary importConfiguredSources() {
+        BookImportRun run = importConfiguredSourcesWithRun(null);
+        return new ImportSummary(run.getSourceCount(), run.getRowsRead(), run.getSaved(), run.getSkipped());
+    }
+
+    public BookImportRun importConfiguredSourcesWithRun(AppUser actor) {
         if (configuredSources.isEmpty()) {
             throw new IllegalStateException("Nessun CSV MIM configurato in inbook.mim-books.csv-urls");
         }
 
-        ImportSummary total = ImportSummary.empty();
+        BookImportRun run = startRun(actor, RUN_TYPE);
+        run.setSourceCount(configuredSources.size());
+        runRepository.save(run);
         Set<String> seenIsbns = new HashSet<>();
+        DetailLimit detailLimit = new DetailLimit();
+        boolean hasFailures = false;
         for (String source : configuredSources) {
-            total = total.plus(importSource(source, seenIsbns));
+            try {
+                SourceImportSummary sourceSummary = importSource(source, seenIsbns, run, detailLimit);
+                saveSourceRun(run, sourceSummary, "COMPLETED", null);
+                addToRun(run, sourceSummary);
+            } catch (RuntimeException e) {
+                hasFailures = true;
+                run.setFailed(run.getFailed() + 1);
+                saveSourceRun(run, new SourceImportSummary(source, 0, 0, 0), "FAILED", e.getMessage());
+            }
         }
-        return total;
+        run.setStatus(hasFailures ? "COMPLETED_WITH_ERRORS" : "COMPLETED");
+        run.setFinished_at(System.currentTimeMillis());
+        return runRepository.save(run);
     }
 
     public ImportSummary importSource(String source) {
-        return importSource(source, new HashSet<>());
+        SourceImportSummary summary = importSource(source, new HashSet<>(), null, null);
+        return summary.toImportSummary();
     }
 
-    private ImportSummary importSource(String source, Set<String> seenIsbns) {
+    public List<String> getConfiguredSources() {
+        return configuredSources;
+    }
+
+    private SourceImportSummary importSource(String source, Set<String> seenIsbns,
+                                             BookImportRun run, DetailLimit detailLimit) {
         if (source == null || source.isBlank()) {
-            return ImportSummary.empty();
+            return SourceImportSummary.empty();
         }
 
         String cleanSource = source.trim();
         try (InputStream inputStream = openSource(cleanSource)) {
-            return importCsv(inputStream, cleanSource, seenIsbns);
+            return importCsv(inputStream, cleanSource, seenIsbns, run, detailLimit);
         } catch (IOException e) {
             throw new IllegalStateException("Import CSV MIM non riuscito per " + cleanSource + ": " + e.getMessage(), e);
         }
@@ -117,7 +162,8 @@ public class MimBookCatalogImportService {
         return Files.newInputStream(Path.of(source));
     }
 
-    private ImportSummary importCsv(InputStream inputStream, String source, Set<String> seenIsbns) throws IOException {
+    private SourceImportSummary importCsv(InputStream inputStream, String source, Set<String> seenIsbns,
+                                          BookImportRun run, DetailLimit detailLimit) throws IOException {
         long rowsRead = 0;
         long saved = 0;
         long skipped = 0;
@@ -126,7 +172,7 @@ public class MimBookCatalogImportService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
             if (headerLine == null) {
-                return new ImportSummary(1, 0, 0, 0);
+                return new SourceImportSummary(source, 0, 0, 0);
             }
             headerLine = stripUtf8Bom(headerLine);
             char delimiter = detectDelimiter(headerLine);
@@ -137,9 +183,18 @@ public class MimBookCatalogImportService {
             while ((line = reader.readLine()) != null) {
                 rowsRead++;
                 List<String> values = parseCsvLine(line, delimiter);
-                BookLookupCache cache = toCache(values, columns);
-                if (cache == null || !seenIsbns.add(cache.getIsbn())) {
+                CacheRow row = toCache(values, columns);
+                if (row.cache() == null) {
                     skipped++;
+                    saveDiscardedItem(run, detailLimit, source, rowsRead, row.rawIsbn(), row.normalizedIsbn(), row.discardReason(), null);
+                    continue;
+                }
+
+                BookLookupCache cache = row.cache();
+                if (!seenIsbns.add(cache.getIsbn())) {
+                    skipped++;
+                    saveDiscardedItem(run, detailLimit, source, rowsRead, row.rawIsbn(), cache.getIsbn(),
+                            "ISBN duplicato nel run o in una sorgente gia letta.", cache.getTitolo());
                     continue;
                 }
 
@@ -152,7 +207,7 @@ public class MimBookCatalogImportService {
 
         saved += saveBatch(batch);
         log.info("Import CSV MIM sorgente={} righe={} salvati={} saltati={}", source, rowsRead, saved, skipped);
-        return new ImportSummary(1, rowsRead, saved, skipped);
+        return new SourceImportSummary(source, rowsRead, saved, skipped);
     }
 
     private long saveBatch(List<BookLookupCache> batch) {
@@ -166,10 +221,14 @@ public class MimBookCatalogImportService {
         return size;
     }
 
-    private BookLookupCache toCache(List<String> values, Map<String, Integer> columns) {
-        String isbn = normalizeIsbn(value(values, columns, "codiceisbn", "isbn"));
+    private CacheRow toCache(List<String> values, Map<String, Integer> columns) {
+        String rawIsbn = value(values, columns, "codiceisbn", "isbn");
+        String isbn = normalizeIsbn(rawIsbn);
+        if (isbn.isBlank()) {
+            return new CacheRow(null, clean(rawIsbn), null, "ISBN mancante.");
+        }
         if (isbn.length() != 13) {
-            return null;
+            return new CacheRow(null, clean(rawIsbn), null, "ISBN normalizzato non a 13 cifre: " + isbn.length() + ".");
         }
 
         long now = System.currentTimeMillis();
@@ -183,7 +242,7 @@ public class MimBookCatalogImportService {
         cache.setSource("MIM_OPEN_DATA");
         cache.setCreated_at(now);
         cache.setUpdated_at(now);
-        return cache;
+        return new CacheRow(cache, clean(rawIsbn), isbn, null);
     }
 
     private String value(List<String> values, Map<String, Integer> columns, String... names) {
@@ -336,6 +395,65 @@ public class MimBookCatalogImportService {
         }
     }
 
+    private BookImportRun startRun(AppUser actor, String type) {
+        BookImportRun run = new BookImportRun();
+        run.setType(type);
+        run.setStatus("RUNNING");
+        run.setActor(actor);
+        run.setStarted_at(System.currentTimeMillis());
+        return runRepository.save(run);
+    }
+
+    private void addToRun(BookImportRun run, SourceImportSummary summary) {
+        run.setRowsRead(run.getRowsRead() + summary.rowsRead());
+        run.setTotalItems(run.getTotalItems() + summary.rowsRead());
+        run.setProcessed(run.getProcessed() + summary.rowsRead());
+        run.setSaved(run.getSaved() + summary.saved());
+        run.setSkipped(run.getSkipped() + summary.skipped());
+        runRepository.save(run);
+    }
+
+    private void saveSourceRun(BookImportRun run, SourceImportSummary summary, String status, String errorMessage) {
+        BookImportRunSource source = new BookImportRunSource();
+        source.setRun(run);
+        source.setSourceUrl(truncate(summary.source(), 1000));
+        source.setStatus(status);
+        source.setRowsRead(summary.rowsRead());
+        source.setSaved(summary.saved());
+        source.setSkipped(summary.skipped());
+        source.setErrorMessage(truncate(errorMessage, 1000));
+        source.setCreated_at(System.currentTimeMillis());
+        sourceRepository.save(source);
+    }
+
+    private void saveDiscardedItem(BookImportRun run, DetailLimit detailLimit, String sourceUrl, long rowNumber,
+                                   String rawIsbn, String normalizedIsbn, String reason, String title) {
+        if (run == null || detailLimit == null || detailLimit.count >= maxDiscardedItems) {
+            return;
+        }
+
+        detailLimit.count++;
+        BookImportRunItem item = new BookImportRunItem();
+        item.setRun(run);
+        item.setSourceUrl(truncate(sourceUrl, 1000));
+        item.setRowNumber(rowNumber);
+        item.setIsbn(truncate(rawIsbn, 20));
+        item.setNormalizedIsbn(truncate(normalizedIsbn, 13));
+        item.setStatus("DISCARDED");
+        item.setFallbackStep("MIM_CSV");
+        item.setReason(truncate(reason, 1000));
+        item.setTitle(truncate(title, 300));
+        item.setCreated_at(System.currentTimeMillis());
+        itemRepository.save(item);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
+    }
+
     private List<String> parseConfiguredSources(String value) {
         if (value == null || value.isBlank()) {
             return List.of();
@@ -344,6 +462,23 @@ public class MimBookCatalogImportService {
                 .map(String::trim)
                 .filter(source -> !source.isBlank())
                 .toList();
+    }
+
+    private record CacheRow(BookLookupCache cache, String rawIsbn, String normalizedIsbn, String discardReason) {
+    }
+
+    private record SourceImportSummary(String source, long rowsRead, long saved, long skipped) {
+        static SourceImportSummary empty() {
+            return new SourceImportSummary("-", 0, 0, 0);
+        }
+
+        ImportSummary toImportSummary() {
+            return new ImportSummary(source == null || source.isBlank() || "-".equals(source) ? 0 : 1, rowsRead, saved, skipped);
+        }
+    }
+
+    private static class DetailLimit {
+        private int count;
     }
 
     public record ImportSummary(int sources, long rowsRead, long saved, long skipped) {

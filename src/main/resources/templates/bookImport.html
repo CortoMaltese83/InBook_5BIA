@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="it" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InBook - Import Libri</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/institutionManager.css">
+</head>
+
+<body>
+<header class="header">
+    <div>
+        <h1>IMPORT LIBRI</h1>
+        <span class="username" th:text="${username}">admin</span>
+    </div>
+    <nav class="nav">
+        <a href="/admin/classes?stato=active" class="nav-link">Classi</a>
+        <a href="/admin/institutions" class="nav-link">Istituti</a>
+        <a href="/admin/books/import" class="nav-link active">Import Libri</a>
+        <a href="/admin/institutions/audit" class="nav-link">Audit</a>
+        <form class="logout-form" th:action="@{/logout}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <button type="submit" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+        </form>
+    </nav>
+</header>
+
+<main class="main-container">
+    <div class="notice success" th:if="${successMessage}" th:text="${successMessage}"></div>
+    <div class="notice error" th:if="${errorMessage}" th:text="${errorMessage}"></div>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Azioni</h2>
+        </div>
+        <div class="action-grid">
+            <form action="/admin/books/import/mim/run" method="post">
+                <button type="submit" title="Importa Open Data MIM">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Importa Open Data MIM
+                </button>
+            </form>
+            <form action="/admin/books/import/fallback/run" method="post">
+                <button type="submit" title="Aggiorna ISBN locali">
+                    <i class="fa-solid fa-arrows-rotate"></i> Aggiorna ISBN locali
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Ricerca cache</h2>
+            <span class="results-summary" th:if="${cacheSearchExecuted}" th:text="${#lists.size(cacheSearchResults) + ' risultati'}">0 risultati</span>
+        </div>
+        <form class="inline-form filter-form" action="/admin/books/import" method="get">
+            <input type="search"
+                   name="cacheSearch"
+                   placeholder="ISBN, titolo, autore, editore o sorgente"
+                   th:value="${cacheSearch}">
+            <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cerca</button>
+            <a class="btn-small btn-secondary" href="/admin/books/import">Reset</a>
+        </form>
+        <div class="table-wrap" th:if="${cacheSearchExecuted}">
+            <table>
+                <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>Titolo</th>
+                    <th>Autore</th>
+                    <th>Editore</th>
+                    <th>Vol.</th>
+                    <th>Prezzo</th>
+                    <th>Sorgente</th>
+                    <th>Aggiornato</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="book : ${cacheSearchResults}">
+                    <td th:text="${book.isbn}">978...</td>
+                    <td th:text="${book.titolo != null ? book.titolo : '-'}">Titolo</td>
+                    <td th:text="${book.autore != null ? book.autore : '-'}">Autore</td>
+                    <td th:text="${book.casaEditrice != null ? book.casaEditrice : '-'}">Editore</td>
+                    <td th:text="${book.volume != null ? book.volume : '-'}">1</td>
+                    <td th:text="${book.prezzo != null ? book.prezzo : '-'}">0</td>
+                    <td><span class="badge" th:text="${book.source != null ? book.source : '-'}">MIM_OPEN_DATA</span></td>
+                    <td th:text="${book.updated_at}">-</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(cacheSearchResults)}">
+                    <td colspan="8" class="empty">Nessun libro trovato nella cache.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>URL Open Data</h2>
+            <span class="results-summary" th:text="${#lists.size(configuredSources) + ' sorgenti'}">0 sorgenti</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>URL</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="source, iter : ${configuredSources}">
+                    <td th:text="${iter.index + 1}">1</td>
+                    <td class="url-cell" th:text="${source}">https://dati.istruzione.it/opendata/...</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(configuredSources)}">
+                    <td colspan="2" class="empty">Nessun URL configurato.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-header">
+            <h2>Run recenti</h2>
+            <span class="results-summary" th:text="${#lists.size(latestRuns) + ' run'}">0 run</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tipo</th>
+                    <th>Stato</th>
+                    <th>Avvio</th>
+                    <th>Fine</th>
+                    <th>Sorgenti</th>
+                    <th>Righe/ISBN</th>
+                    <th>Salvati</th>
+                    <th>Aggiornati</th>
+                    <th>Scartati</th>
+                    <th>Errori</th>
+                    <th>Dettaglio</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="run : ${latestRuns}">
+                    <td th:text="${run.id}">1</td>
+                    <td th:text="${run.type == 'MIM_OPEN_DATA_IMPORT' ? 'Open Data MIM' : 'Fallback ISBN'}">tipo</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="${run.status == 'COMPLETED'} ? ' ok' : (${run.status == 'RUNNING'} ? ' warn' : ' muted')"
+                              th:text="${run.status}">COMPLETED</span>
+                    </td>
+                    <td th:text="${run.started_at}">-</td>
+                    <td th:text="${run.finished_at != null ? run.finished_at : '-'}">-</td>
+                    <td th:text="${run.sourceCount}">0</td>
+                    <td th:text="${run.totalItems > 0 ? run.totalItems : run.rowsRead}">0</td>
+                    <td th:text="${run.saved}">0</td>
+                    <td th:text="${run.updated}">0</td>
+                    <td th:text="${run.skipped}">0</td>
+                    <td th:text="${run.failed}">0</td>
+                    <td>
+                        <a class="btn-small btn-secondary" th:href="@{/admin/books/import/runs/{id}(id=${run.id})}">
+                            <i class="fa-solid fa-list"></i> Apri
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(latestRuns)}">
+                    <td colspan="12" class="empty">Nessun run registrato.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+
+</html>
