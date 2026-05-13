@@ -142,7 +142,7 @@
                     <th>Aggiornati</th>
                     <th>Scartati</th>
                     <th>Errori</th>
-                    <th>Dettaglio</th>
+                    <th>Azioni</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -151,7 +151,7 @@
                     <td th:text="${run.type == 'MIM_OPEN_DATA_IMPORT' ? 'Open Data MIM' : 'Fallback ISBN'}">tipo</td>
                     <td>
                         <span class="badge"
-                              th:classappend="${run.status == 'COMPLETED'} ? ' ok' : (${run.status == 'RUNNING'} ? ' warn' : ' muted')"
+                              th:classappend="${run.status == 'COMPLETED'} ? ' ok' : (${run.status == 'RUNNING' || run.status == 'PENDING'} ? ' warn' : ' muted')"
                               th:text="${run.status}">COMPLETED</span>
                     </td>
                     <td th:text="${run.started_at}">-</td>
@@ -162,10 +162,18 @@
                     <td th:text="${run.updated}">0</td>
                     <td th:text="${run.skipped}">0</td>
                     <td th:text="${run.failed}">0</td>
-                    <td>
+                    <td class="actions">
                         <a class="btn-small btn-secondary" th:href="@{/admin/books/import/runs/{id}(id=${run.id})}">
                             <i class="fa-solid fa-list"></i> Apri
                         </a>
+                        <form th:if="${run.status == 'RUNNING' || run.status == 'PENDING'}"
+                              th:action="@{/admin/books/import/runs/{id}/interrupt(id=${run.id})}"
+                              method="post"
+                              onsubmit="return confirm('Interrompere manualmente questo run?');">
+                            <button type="submit" class="btn-small danger">
+                                <i class="fa-solid fa-stop"></i> Stop
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(latestRuns)}">

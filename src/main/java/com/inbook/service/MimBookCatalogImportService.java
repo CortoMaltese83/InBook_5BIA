@@ -12,6 +12,8 @@ import com.inbook.repository.entity.BookImportRunSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +44,9 @@ import java.util.regex.Pattern;
 public class MimBookCatalogImportService {
     private static final Logger log = LoggerFactory.getLogger(MimBookCatalogImportService.class);
     private static final int BATCH_SIZE = 500;
+    private static final long INTERRUPT_CHECK_INTERVAL_ROWS = 5000;
     private static final String RUN_TYPE = "MIM_OPEN_DATA_IMPORT";
+    private static final List<String> ACTIVE_STATUSES = List.of("RUNNING", "PENDING");
     private static final Pattern INTEGER_PATTERN = Pattern.compile("\\d+");
     private static final Pattern PRICE_PATTERN = Pattern.compile("\\d+(?:[.,]\\d{1,2})?");
 
@@ -83,9 +87,13 @@ public class MimBookCatalogImportService {
         if (!scheduledImportEnabled || configuredSources.isEmpty()) {
             return;
         }
-        BookImportRun run = importConfiguredSourcesWithRun(null);
-        log.info("Import catalogo MIM completato. Sorgenti={}, righe={}, salvati={}, saltati={}",
-                run.getSourceCount(), run.getRowsRead(), run.getSaved(), run.getSkipped());
+        try {
+            BookImportRun run = importConfiguredSourcesWithRun(null);
+            log.info("Import catalogo MIM completato. Sorgenti={}, righe={}, salvati={}, saltati={}",
+                    run.getSourceCount(), run.getRowsRead(), run.getSaved(), run.getSkipped());
+        } catch (ActiveImportRunException e) {
+            log.info("Import catalogo MIM schedulato saltato: run #{} gia attivo.", e.getRunId());
+        }
     }
 
     public ImportSummary importConfiguredSources() {
@@ -94,30 +102,100 @@ public class MimBookCatalogImportService {
     }
 
     public BookImportRun importConfiguredSourcesWithRun(AppUser actor) {
+        BookImportRun run = startConfiguredSourcesRun(actor);
+        return executeConfiguredSourcesRun(run.getId());
+    }
+
+    public BookImportRun startConfiguredSourcesRun(AppUser actor) {
         if (configuredSources.isEmpty()) {
             throw new IllegalStateException("Nessun CSV MIM configurato in inbook.mim-books.csv-urls");
+        }
+        List<BookImportRun> activeRuns = runRepository.findActiveByType(RUN_TYPE, ACTIVE_STATUSES, PageRequest.of(0, 1));
+        if (!activeRuns.isEmpty()) {
+            throw new ActiveImportRunException(activeRuns.get(0));
         }
 
         BookImportRun run = startRun(actor, RUN_TYPE);
         run.setSourceCount(configuredSources.size());
+        return runRepository.save(run);
+    }
+
+    @Async("bookImportTaskExecutor")
+    public void importConfiguredSourcesInBackground(Long runId) {
+        try {
+            executeConfiguredSourcesRun(runId);
+        } catch (RuntimeException e) {
+            log.error("Import catalogo MIM in background fallito per run #{}.", runId, e);
+            markRunFailed(runId, e.getMessage());
+        }
+    }
+
+    public BookImportRun executeConfiguredSourcesRun(Long runId) {
+        BookImportRun run = runRepository.findById(runId)
+                .orElseThrow(() -> new IllegalArgumentException("Run MIM non trovato: " + runId));
+        if (!"RUNNING".equalsIgnoreCase(run.getStatus()) && !"PENDING".equalsIgnoreCase(run.getStatus())) {
+            return run;
+        }
+        if (isInterrupted(run)) {
+            run.setStatus("INTERRUPTED");
+            run.setFinished_at(System.currentTimeMillis());
+            return runRepository.save(run);
+        }
+
+        run.setStatus("RUNNING");
+        run.setFinished_at(null);
+        run.setSourceCount(configuredSources.size());
         runRepository.save(run);
+
         Set<String> seenIsbns = new HashSet<>();
         DetailLimit detailLimit = new DetailLimit();
         boolean hasFailures = false;
-        for (String source : configuredSources) {
-            try {
-                SourceImportSummary sourceSummary = importSource(source, seenIsbns, run, detailLimit);
-                saveSourceRun(run, sourceSummary, "COMPLETED", null);
-                addToRun(run, sourceSummary);
-            } catch (RuntimeException e) {
-                hasFailures = true;
-                run.setFailed(run.getFailed() + 1);
-                saveSourceRun(run, new SourceImportSummary(source, 0, 0, 0), "FAILED", e.getMessage());
+        boolean interrupted = false;
+        try {
+            for (String source : configuredSources) {
+                if (isInterrupted(run)) {
+                    interrupted = true;
+                    break;
+                }
+                try {
+                    SourceImportSummary sourceSummary = importSource(source, seenIsbns, run, detailLimit);
+                    boolean sourceInterrupted = isInterrupted(run);
+                    saveSourceRun(run, sourceSummary, sourceInterrupted ? "INTERRUPTED" : "COMPLETED", null);
+                    addToRun(run, sourceSummary);
+                    if (sourceInterrupted) {
+                        interrupted = true;
+                        break;
+                    }
+                } catch (RuntimeException e) {
+                    hasFailures = true;
+                    run.setFailed(run.getFailed() + 1);
+                    saveSourceRun(run, new SourceImportSummary(source, 0, 0, 0), "FAILED", e.getMessage());
+                }
             }
+        } catch (RuntimeException e) {
+            run.setStatus("FAILED");
+            run.setErrorMessage(truncate(e.getMessage(), 1000));
+            run.setFinished_at(System.currentTimeMillis());
+            return runRepository.save(run);
         }
-        run.setStatus(hasFailures ? "COMPLETED_WITH_ERRORS" : "COMPLETED");
+        run.setStatus(interrupted || isInterrupted(run) ? "INTERRUPTED" : (hasFailures ? "COMPLETED_WITH_ERRORS" : "COMPLETED"));
         run.setFinished_at(System.currentTimeMillis());
         return runRepository.save(run);
+    }
+
+    public void markRunFailed(Long runId, String errorMessage) {
+        if (runId == null) {
+            return;
+        }
+        runRepository.findById(runId).ifPresent(run -> {
+            if ("INTERRUPTED".equalsIgnoreCase(run.getStatus())) {
+                return;
+            }
+            run.setStatus("FAILED");
+            run.setErrorMessage(truncate(errorMessage, 1000));
+            run.setFinished_at(System.currentTimeMillis());
+            runRepository.save(run);
+        });
     }
 
     public ImportSummary importSource(String source) {
@@ -185,6 +263,9 @@ public class MimBookCatalogImportService {
             String line;
             while ((line = reader.readLine()) != null) {
                 rowsRead++;
+                if (rowsRead % INTERRUPT_CHECK_INTERVAL_ROWS == 0 && isInterrupted(run)) {
+                    break;
+                }
                 List<String> values = parseCsvLine(line, delimiter);
                 CacheRow row = toCache(values, columns);
                 if (row.cache() == null) {
@@ -211,6 +292,16 @@ public class MimBookCatalogImportService {
         saved += saveBatch(batch);
         log.info("Import CSV MIM sorgente={} righe={} salvati={} saltati={}", source, rowsRead, saved, skipped);
         return new SourceImportSummary(source, rowsRead, saved, skipped);
+    }
+
+    private boolean isInterrupted(BookImportRun run) {
+        if (run == null || run.getId() == null) {
+            return false;
+        }
+        return runRepository.findById(run.getId())
+                .map(BookImportRun::getStatus)
+                .map(status -> "INTERRUPTED".equalsIgnoreCase(status))
+                .orElse(false);
     }
 
     private long saveBatch(List<BookLookupCache> batch) {
@@ -487,6 +578,19 @@ public class MimBookCatalogImportService {
 
     private static class DetailLimit {
         private int count;
+    }
+
+    public static class ActiveImportRunException extends RuntimeException {
+        private final Long runId;
+
+        public ActiveImportRunException(BookImportRun run) {
+            super("Esiste gia un import Open Data MIM attivo: run #" + run.getId() + ".");
+            this.runId = run.getId();
+        }
+
+        public Long getRunId() {
+            return runId;
+        }
     }
 
     public record ImportSummary(int sources, long rowsRead, long saved, long skipped) {

@@ -45,10 +45,13 @@ public class BookIsbnFallbackBatchService {
             runRepository.save(run);
 
             for (Book book : books) {
+                if (isInterrupted(run)) {
+                    break;
+                }
                 processBook(run, book);
             }
 
-            run.setStatus(run.getFailed() > 0 ? "COMPLETED_WITH_ERRORS" : "COMPLETED");
+            run.setStatus(isInterrupted(run) ? "INTERRUPTED" : (run.getFailed() > 0 ? "COMPLETED_WITH_ERRORS" : "COMPLETED"));
         } catch (RuntimeException e) {
             run.setStatus("FAILED");
             run.setErrorMessage(truncate(e.getMessage(), 1000));
@@ -56,6 +59,16 @@ public class BookIsbnFallbackBatchService {
             run.setFinished_at(System.currentTimeMillis());
         }
         return runRepository.save(run);
+    }
+
+    private boolean isInterrupted(BookImportRun run) {
+        if (run == null || run.getId() == null) {
+            return false;
+        }
+        return runRepository.findById(run.getId())
+                .map(BookImportRun::getStatus)
+                .map(status -> "INTERRUPTED".equalsIgnoreCase(status))
+                .orElse(false);
     }
 
     private BookImportRun startRun(AppUser actor) {

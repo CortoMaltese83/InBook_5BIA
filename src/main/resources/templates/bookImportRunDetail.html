@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta th:if="${run.status == 'RUNNING' || run.status == 'PENDING'}" http-equiv="refresh" content="7">
     <title>InBook - Dettaglio Run Libri</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -35,13 +36,23 @@
     <section class="section">
         <div class="section-header">
             <h2 th:text="${'Run #' + run.id}">Run</h2>
-            <a class="section-link" href="/admin/books/import">
-                <i class="fa-solid fa-arrow-left"></i> Import libri
-            </a>
+            <div class="actions">
+                <form th:if="${run.status == 'RUNNING' || run.status == 'PENDING'}"
+                      th:action="@{/admin/books/import/runs/{id}/interrupt(id=${run.id})}"
+                      method="post"
+                      onsubmit="return confirm('Interrompere manualmente questo run?');">
+                    <button type="submit" class="btn-small danger">
+                        <i class="fa-solid fa-stop"></i> Stop
+                    </button>
+                </form>
+                <a class="section-link" href="/admin/books/import">
+                    <i class="fa-solid fa-arrow-left"></i> Import libri
+                </a>
+            </div>
         </div>
         <div class="section-header compact-header">
             <span class="badge"
-                  th:classappend="${run.status == 'COMPLETED'} ? ' ok' : (${run.status == 'RUNNING'} ? ' warn' : ' muted')"
+                  th:classappend="${run.status == 'COMPLETED'} ? ' ok' : (${run.status == 'RUNNING' || run.status == 'PENDING'} ? ' warn' : ' muted')"
                   th:text="${run.status}">COMPLETED</span>
         </div>
 

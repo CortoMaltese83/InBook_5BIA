@@ -13,6 +13,7 @@ import com.inbook.repository.entity.BookLookupCache;
 import com.inbook.service.BookIsbnFallbackBatchService;
 import com.inbook.service.InstitutionAdminService;
 import com.inbook.service.MimBookCatalogImportService;
+import org.springframework.core.task.TaskRejectedException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
@@ -136,13 +137,57 @@ public class MimBookImportController {
         return "bookImportRunDiscarded";
     }
 
+    @PostMapping("/admin/books/import/runs/{id}/interrupt")
+    public String interruptRun(@PathVariable("id") Long id,
+                               Principal principal,
+                               RedirectAttributes redirectAttributes) {
+        requireAdmin(principal);
+        BookImportRun run = runRepository.findById(id).orElse(null);
+        if (run == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Run non trovato.");
+            return "redirect:/admin/books/import";
+        }
+        if (!canInterrupt(run)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Il run #" + id + " non e in stato interrompibile.");
+            return "redirect:/admin/books/import/runs/" + id;
+        }
+
+        run.setStatus("INTERRUPTED");
+        run.setFinished_at(System.currentTimeMillis());
+        run.setErrorMessage("Run interrotto manualmente da amministratore.");
+        runRepository.save(run);
+        redirectAttributes.addFlashAttribute("successMessage", "Run #" + id + " marcato come INTERRUPTED.");
+        return "redirect:/admin/books/import/runs/" + id;
+    }
+
+    private boolean canInterrupt(BookImportRun run) {
+        if (run == null || run.getStatus() == null) {
+            return false;
+        }
+        String status = run.getStatus().toUpperCase();
+        return "RUNNING".equals(status) || "PENDING".equals(status);
+    }
+
     @PostMapping("/admin/books/import/mim/run")
     public String runMimImport(Principal principal, RedirectAttributes redirectAttributes) {
         AppUser user = requireAdmin(principal);
+        BookImportRun run = null;
         try {
-            BookImportRun run = importService.importConfiguredSourcesWithRun(user);
-            redirectAttributes.addFlashAttribute("successMessage", "Import Open Data MIM completato: " + run.getStatus() + ".");
+            run = importService.startConfiguredSourcesRun(user);
+            importService.importConfiguredSourcesInBackground(run.getId());
+            redirectAttributes.addFlashAttribute("successMessage", "Import Open Data MIM avviato in background.");
             return "redirect:/admin/books/import/runs/" + run.getId();
+        } catch (MimBookCatalogImportService.ActiveImportRunException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Esiste gia un import Open Data MIM attivo: run #" + e.getRunId() + ".");
+            return "redirect:/admin/books/import/runs/" + e.getRunId();
+        } catch (TaskRejectedException e) {
+            if (run != null) {
+                importService.markRunFailed(run.getId(), "Executor import non disponibile: " + e.getMessage());
+                redirectAttributes.addFlashAttribute("errorMessage", "Import Open Data MIM non avviato: executor occupato.");
+                return "redirect:/admin/books/import/runs/" + run.getId();
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", "Import Open Data MIM non avviato: executor occupato.");
+            return "redirect:/admin/books/import";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/admin/books/import";
@@ -167,24 +212,42 @@ public class MimBookImportController {
                                               Principal principal) {
         AppUser user = requireAdmin(principal);
 
-        MimBookCatalogImportService.ImportSummary summary = source == null || source.isBlank()
-                ? runSummary(importService.importConfiguredSourcesWithRun(user))
-                : importService.importSource(source);
+        if (source == null || source.isBlank()) {
+            BookImportRun run = null;
+            try {
+                run = importService.startConfiguredSourcesRun(user);
+                importService.importConfiguredSourcesInBackground(run.getId());
+                return Map.of(
+                        "runId", run.getId(),
+                        "status", run.getStatus(),
+                        "redirect", "/admin/books/import/runs/" + run.getId()
+                );
+            } catch (MimBookCatalogImportService.ActiveImportRunException e) {
+                return Map.of(
+                        "runId", e.getRunId(),
+                        "status", "ALREADY_RUNNING",
+                        "redirect", "/admin/books/import/runs/" + e.getRunId()
+                );
+            } catch (TaskRejectedException e) {
+                if (run != null) {
+                    importService.markRunFailed(run.getId(), "Executor import non disponibile: " + e.getMessage());
+                    return Map.of(
+                            "runId", run.getId(),
+                            "status", "FAILED",
+                            "redirect", "/admin/books/import/runs/" + run.getId()
+                    );
+                }
+                return Map.of("status", "FAILED");
+            }
+        }
+
+        MimBookCatalogImportService.ImportSummary summary = importService.importSource(source);
 
         return Map.of(
                 "sources", summary.sources(),
                 "rowsRead", summary.rowsRead(),
                 "saved", summary.saved(),
                 "skipped", summary.skipped()
-        );
-    }
-
-    private MimBookCatalogImportService.ImportSummary runSummary(BookImportRun run) {
-        return new MimBookCatalogImportService.ImportSummary(
-                run.getSourceCount(),
-                run.getRowsRead(),
-                run.getSaved(),
-                run.getSkipped()
         );
     }
 
