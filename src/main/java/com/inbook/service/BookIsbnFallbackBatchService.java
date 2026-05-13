@@ -22,15 +22,18 @@ public class BookIsbnFallbackBatchService {
     private final BookLookupService bookLookupService;
     private final BookImportRunRepository runRepository;
     private final BookImportRunItemRepository itemRepository;
+    private final BookImportRunErrorGroupService errorGroupService;
 
     public BookIsbnFallbackBatchService(BookRepository bookRepository,
                                         BookLookupService bookLookupService,
                                         BookImportRunRepository runRepository,
-                                        BookImportRunItemRepository itemRepository) {
+                                        BookImportRunItemRepository itemRepository,
+                                        BookImportRunErrorGroupService errorGroupService) {
         this.bookRepository = bookRepository;
         this.bookLookupService = bookLookupService;
         this.runRepository = runRepository;
         this.itemRepository = itemRepository;
+        this.errorGroupService = errorGroupService;
     }
 
     @Transactional
@@ -131,6 +134,7 @@ public class BookIsbnFallbackBatchService {
 
     private void saveDiscardedItem(BookImportRun run, Book book, String rawIsbn, String normalizedIsbn,
                                    String fallbackStep, String reason) {
+        errorGroupService.increment(run, "DISCARDED", fallbackStep, reason);
         BookImportRunItem item = baseItem(run, book.getId(), rawIsbn, normalizedIsbn);
         item.setStatus("DISCARDED");
         item.setFallbackStep(fallbackStep);

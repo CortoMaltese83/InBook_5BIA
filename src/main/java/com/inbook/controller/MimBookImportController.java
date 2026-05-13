@@ -1,11 +1,14 @@
 package com.inbook.controller;
 
 import com.inbook.repository.BookImportRunItemRepository;
+import com.inbook.repository.BookImportRunErrorGroupRepository;
 import com.inbook.repository.BookImportRunRepository;
 import com.inbook.repository.BookImportRunSourceRepository;
 import com.inbook.repository.BookLookupCacheRepository;
 import com.inbook.repository.entity.AppUser;
 import com.inbook.repository.entity.BookImportRun;
+import com.inbook.repository.entity.BookImportRunErrorGroup;
+import com.inbook.repository.entity.BookImportRunItem;
 import com.inbook.repository.entity.BookLookupCache;
 import com.inbook.service.BookIsbnFallbackBatchService;
 import com.inbook.service.InstitutionAdminService;
@@ -21,9 +24,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Controller
 public class MimBookImportController {
@@ -33,6 +40,7 @@ public class MimBookImportController {
     private final BookImportRunRepository runRepository;
     private final BookImportRunSourceRepository sourceRepository;
     private final BookImportRunItemRepository itemRepository;
+    private final BookImportRunErrorGroupRepository errorGroupRepository;
     private final BookLookupCacheRepository cacheRepository;
 
     public MimBookImportController(MimBookCatalogImportService importService,
@@ -41,6 +49,7 @@ public class MimBookImportController {
                                    BookImportRunRepository runRepository,
                                    BookImportRunSourceRepository sourceRepository,
                                    BookImportRunItemRepository itemRepository,
+                                   BookImportRunErrorGroupRepository errorGroupRepository,
                                    BookLookupCacheRepository cacheRepository) {
         this.importService = importService;
         this.fallbackBatchService = fallbackBatchService;
@@ -48,6 +57,7 @@ public class MimBookImportController {
         this.runRepository = runRepository;
         this.sourceRepository = sourceRepository;
         this.itemRepository = itemRepository;
+        this.errorGroupRepository = errorGroupRepository;
         this.cacheRepository = cacheRepository;
     }
 
@@ -86,8 +96,44 @@ public class MimBookImportController {
         model.addAttribute("username", user.getEmail());
         model.addAttribute("run", run);
         model.addAttribute("runSources", sourceRepository.findByRunOrderByIdAsc(run));
-        model.addAttribute("runItems", itemRepository.findByRunOrderByIdAsc(run));
+        model.addAttribute("discardedGroups", toErrorGroupViews(id, run));
         return "bookImportRunDetail";
+    }
+
+    @GetMapping("/admin/books/import/runs/{id}/discarded/{key}")
+    public String importRunDiscardedDetail(@PathVariable("id") Long id,
+                                           @PathVariable("key") String key,
+                                           Model model,
+                                           Principal principal,
+                                           RedirectAttributes redirectAttributes) {
+        AppUser user = requireAdmin(principal);
+        BookImportRun run = runRepository.findById(id).orElse(null);
+        if (run == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Run non trovato.");
+            return "redirect:/admin/books/import";
+        }
+
+        ErrorGroupView selectedGroup = toErrorGroupViews(id, run).stream()
+                .filter(group -> group.key().equals(key))
+                .findFirst()
+                .orElse(null);
+        if (selectedGroup == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gruppo di errore non trovato.");
+            return "redirect:/admin/books/import/runs/" + id;
+        }
+
+        List<BookImportRunItem> discardedItems = itemRepository.findByDiscardedGroup(
+                run,
+                selectedGroup.status(),
+                selectedGroup.fallbackStep(),
+                selectedGroup.reason()
+        );
+
+        model.addAttribute("username", user.getEmail());
+        model.addAttribute("run", run);
+        model.addAttribute("group", selectedGroup);
+        model.addAttribute("discardedItems", discardedItems);
+        return "bookImportRunDiscarded";
     }
 
     @PostMapping("/admin/books/import/mim/run")
@@ -155,5 +201,58 @@ public class MimBookImportController {
             return "";
         }
         return value.replaceAll("\\D", "");
+    }
+
+    private List<ErrorGroupView> toErrorGroupViews(Long runId, BookImportRun run) {
+        List<BookImportRunErrorGroup> persistedGroups = errorGroupRepository.findByRunOrderByItemCountDescFallbackStepAscReasonAsc(run);
+        if (!persistedGroups.isEmpty()) {
+            return persistedGroups.stream()
+                    .map(group -> new ErrorGroupView(
+                            errorGroupKey(group.getStatus(), group.getFallbackStep(), group.getReason()),
+                            runId,
+                            group.getStatus(),
+                            group.getFallbackStep(),
+                            group.getReason(),
+                            group.getItemCount()
+                    ))
+                    .toList();
+        }
+
+        return itemRepository.findDiscardedGroups(run).stream()
+                .map(group -> new ErrorGroupView(
+                        errorGroupKey(group.status(), group.fallbackStep(), group.reason()),
+                        runId,
+                        group.status(),
+                        group.fallbackStep(),
+                        group.reason(),
+                        group.count()
+                ))
+                .toList();
+    }
+
+    private String errorGroupKey(String status, String fallbackStep, String reason) {
+        String raw = String.join("|",
+                nullToEmpty(status),
+                nullToEmpty(fallbackStep),
+                nullToEmpty(reason)
+        );
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(raw.getBytes(StandardCharsets.UTF_8));
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 12 && i < hash.length; i++) {
+                builder.append(String.format("%02x", hash[i]));
+            }
+            return builder.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return Integer.toHexString(Objects.hash(raw));
+        }
+    }
+
+    private String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
+    public record ErrorGroupView(String key, Long runId, String status, String fallbackStep, String reason, long count) {
     }
 }

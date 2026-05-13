@@ -50,6 +50,7 @@ public class MimBookCatalogImportService {
     private final BookImportRunRepository runRepository;
     private final BookImportRunSourceRepository sourceRepository;
     private final BookImportRunItemRepository itemRepository;
+    private final BookImportRunErrorGroupService errorGroupService;
     private final HttpClient httpClient;
     private final List<String> configuredSources;
     private final boolean scheduledImportEnabled;
@@ -59,6 +60,7 @@ public class MimBookCatalogImportService {
                                        BookImportRunRepository runRepository,
                                        BookImportRunSourceRepository sourceRepository,
                                        BookImportRunItemRepository itemRepository,
+                                       BookImportRunErrorGroupService errorGroupService,
                                        @Value("${inbook.mim-books.csv-urls:}") String csvUrls,
                                        @Value("${inbook.mim-books.scheduled-enabled:false}") boolean scheduledImportEnabled,
                                        @Value("${inbook.import-report.max-discarded-items:500}") int maxDiscardedItems) {
@@ -66,6 +68,7 @@ public class MimBookCatalogImportService {
         this.runRepository = runRepository;
         this.sourceRepository = sourceRepository;
         this.itemRepository = itemRepository;
+        this.errorGroupService = errorGroupService;
         this.configuredSources = parseConfiguredSources(csvUrls);
         this.scheduledImportEnabled = scheduledImportEnabled;
         this.maxDiscardedItems = Math.max(0, maxDiscardedItems);
@@ -428,7 +431,12 @@ public class MimBookCatalogImportService {
 
     private void saveDiscardedItem(BookImportRun run, DetailLimit detailLimit, String sourceUrl, long rowNumber,
                                    String rawIsbn, String normalizedIsbn, String reason, String title) {
-        if (run == null || detailLimit == null || detailLimit.count >= maxDiscardedItems) {
+        if (run == null) {
+            return;
+        }
+        errorGroupService.increment(run, "DISCARDED", "MIM_CSV", reason);
+
+        if (detailLimit == null || detailLimit.count >= maxDiscardedItems) {
             return;
         }
 

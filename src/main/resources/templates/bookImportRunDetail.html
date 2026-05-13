@@ -93,34 +93,33 @@
 
     <section class="section">
         <div class="section-header">
-            <h2>ISBN e fallback</h2>
-            <span class="results-summary" th:text="${#lists.size(runItems) + ' dettagli'}">0 dettagli</span>
+            <h2>ISBN scartati</h2>
+            <span class="results-summary" th:text="${#lists.size(discardedGroups) + ' motivi'}">0 motivi</span>
         </div>
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
-                    <th>Stato</th>
-                    <th>ISBN</th>
-                    <th>Normalizzato</th>
-                    <th>Libro/Riga</th>
-                    <th>Fallback</th>
-                    <th>Titolo</th>
+                    <th>Tipo</th>
                     <th>Motivo</th>
+                    <th>ISBN scartati</th>
+                    <th>Dettaglio</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="item : ${runItems}">
-                    <td><span class="badge" th:classappend="${item.status == 'UPDATED' || item.status == 'FOUND'} ? ' ok' : ' warn'" th:text="${item.status}">UPDATED</span></td>
-                    <td th:text="${item.isbn != null ? item.isbn : '-'}">-</td>
-                    <td th:text="${item.normalizedIsbn != null ? item.normalizedIsbn : '-'}">-</td>
-                    <td th:text="${item.bookId != null ? ('Libro #' + item.bookId) : (item.rowNumber != null ? ('Riga ' + item.rowNumber) : '-')}">-</td>
-                    <td th:text="${item.fallbackStep != null ? item.fallbackStep : '-'}">-</td>
-                    <td th:text="${item.title != null ? item.title : '-'}">-</td>
-                    <td class="reason-cell" th:text="${item.reason != null ? item.reason : '-'}">-</td>
+                <tr th:each="group : ${discardedGroups}">
+                    <td><span class="badge warn" th:text="${group.fallbackStep != null ? group.fallbackStep : group.status}">MIM_CSV</span></td>
+                    <td class="reason-cell" th:text="${group.reason != null ? group.reason : '-'}">Motivo</td>
+                    <td th:text="${group.count}">0</td>
+                    <td>
+                        <a class="btn-small btn-secondary"
+                           th:href="@{/admin/books/import/runs/{runId}/discarded/{key}(runId=${group.runId}, key=${group.key})}">
+                            <i class="fa-solid fa-list"></i> Apri
+                        </a>
+                    </td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(runItems)}">
-                    <td colspan="7" class="empty">Nessun dettaglio ISBN per questo run.</td>
+                <tr th:if="${#lists.isEmpty(discardedGroups)}">
+                    <td colspan="4" class="empty">Nessun ISBN scartato per questo run.</td>
                 </tr>
                 </tbody>
             </table>
