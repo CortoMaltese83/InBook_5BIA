@@ -23,22 +23,26 @@ public class BookIsbnFallbackBatchService {
     private final BookImportRunRepository runRepository;
     private final BookImportRunItemRepository itemRepository;
     private final BookImportRunErrorGroupService errorGroupService;
+    private final AdminActivityLogService activityLogService;
 
     public BookIsbnFallbackBatchService(BookRepository bookRepository,
                                         BookLookupService bookLookupService,
                                         BookImportRunRepository runRepository,
                                         BookImportRunItemRepository itemRepository,
-                                        BookImportRunErrorGroupService errorGroupService) {
+                                        BookImportRunErrorGroupService errorGroupService,
+                                        AdminActivityLogService activityLogService) {
         this.bookRepository = bookRepository;
         this.bookLookupService = bookLookupService;
         this.runRepository = runRepository;
         this.itemRepository = itemRepository;
         this.errorGroupService = errorGroupService;
+        this.activityLogService = activityLogService;
     }
 
     @Transactional
     public BookImportRun runFallbackBatch(AppUser actor) {
         BookImportRun run = startRun(actor);
+        activityLogService.recordBookImportRunStarted(actor, run);
         try {
             List<Book> books = bookRepository.findAll();
             run.setTotalItems(books.size());

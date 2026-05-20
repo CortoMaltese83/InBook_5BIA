@@ -11,8 +11,12 @@ import java.util.List;
 public class BookService {
 
     private final BookRepository bookRepository;
+    private final BookLookupService bookLookupService;
 
-    public BookService(BookRepository bookRepository) { this.bookRepository = bookRepository; }
+    public BookService(BookRepository bookRepository, BookLookupService bookLookupService) {
+        this.bookRepository = bookRepository;
+        this.bookLookupService = bookLookupService;
+    }
 
     public void addBook(String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato){
 
@@ -28,6 +32,9 @@ public class BookService {
         book.setConsigliato(consigliato);
 
         bookRepository.save(book);
+        if (bookLookupService != null) {
+            bookLookupService.cacheManualBookIfAbsent(isbn, autore, titolo, volume, casaEditrice, prezzo);
+        }
     }
 
     public Book modifyBook(Long id, String isbn, String autore, String titolo, int volume, String casaEditrice, double prezzo, boolean daAcquistare, boolean consigliato) {

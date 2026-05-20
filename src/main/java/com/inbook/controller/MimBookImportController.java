@@ -10,6 +10,7 @@ import com.inbook.repository.entity.BookImportRun;
 import com.inbook.repository.entity.BookImportRunErrorGroup;
 import com.inbook.repository.entity.BookImportRunItem;
 import com.inbook.repository.entity.BookLookupCache;
+import com.inbook.service.AdminActivityLogService;
 import com.inbook.service.BookIsbnFallbackBatchService;
 import com.inbook.service.InstitutionAdminService;
 import com.inbook.service.MimBookCatalogImportService;
@@ -37,6 +38,7 @@ import java.util.Objects;
 public class MimBookImportController {
     private final MimBookCatalogImportService importService;
     private final BookIsbnFallbackBatchService fallbackBatchService;
+    private final AdminActivityLogService activityLogService;
     private final InstitutionAdminService institutionAdminService;
     private final BookImportRunRepository runRepository;
     private final BookImportRunSourceRepository sourceRepository;
@@ -46,6 +48,7 @@ public class MimBookImportController {
 
     public MimBookImportController(MimBookCatalogImportService importService,
                                    BookIsbnFallbackBatchService fallbackBatchService,
+                                   AdminActivityLogService activityLogService,
                                    InstitutionAdminService institutionAdminService,
                                    BookImportRunRepository runRepository,
                                    BookImportRunSourceRepository sourceRepository,
@@ -54,6 +57,7 @@ public class MimBookImportController {
                                    BookLookupCacheRepository cacheRepository) {
         this.importService = importService;
         this.fallbackBatchService = fallbackBatchService;
+        this.activityLogService = activityLogService;
         this.institutionAdminService = institutionAdminService;
         this.runRepository = runRepository;
         this.sourceRepository = sourceRepository;
@@ -175,6 +179,7 @@ public class MimBookImportController {
         try {
             run = importService.startConfiguredSourcesRun(user);
             importService.importConfiguredSourcesInBackground(run.getId());
+            activityLogService.recordBookImportRunStarted(user, run);
             redirectAttributes.addFlashAttribute("successMessage", "Import Open Data MIM avviato in background.");
             return "redirect:/admin/books/import/runs/" + run.getId();
         } catch (MimBookCatalogImportService.ActiveImportRunException e) {
@@ -217,6 +222,7 @@ public class MimBookImportController {
             try {
                 run = importService.startConfiguredSourcesRun(user);
                 importService.importConfiguredSourcesInBackground(run.getId());
+                activityLogService.recordBookImportRunStarted(user, run);
                 return Map.of(
                         "runId", run.getId(),
                         "status", run.getStatus(),

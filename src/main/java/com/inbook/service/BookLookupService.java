@@ -32,6 +32,7 @@ public class BookLookupService {
     private static final Duration REMOTE_TIMEOUT = Duration.ofSeconds(8);
     private static final String SOURCE_GOOGLE_BOOKS = "GOOGLE_BOOKS";
     private static final String SOURCE_OPEN_LIBRARY = "OPEN_LIBRARY";
+    private static final String SOURCE_USER_MANUAL = "USER_MANUAL";
 
     private final BookLookupCacheRepository cacheRepository;
     private final List<RemoteBookLookupProvider> remoteProviders;
@@ -99,6 +100,40 @@ public class BookLookupService {
             throw new BookLookupUnavailableException("Cataloghi remoti temporaneamente non disponibili.", cleanIsbn, steps);
         }
         throw notFound(cleanIsbn, steps);
+    }
+
+    public boolean cacheManualBookIfAbsent(String isbn, String autore, String titolo, Integer volume,
+                                           String casaEditrice, Double prezzo) {
+        if (cacheRepository == null) {
+            return false;
+        }
+
+        String cleanIsbn;
+        try {
+            cleanIsbn = normalizeLookupIsbn(isbn);
+        } catch (IllegalArgumentException e) {
+            log.debug("Libro manuale non salvato in cache: ISBN non valido ({})", isbn);
+            return false;
+        }
+
+        if (cacheRepository.findById(cleanIsbn).isPresent()) {
+            return false;
+        }
+
+        long now = System.currentTimeMillis();
+        BookLookupCache cache = new BookLookupCache();
+        cache.setIsbn(cleanIsbn);
+        cache.setAutore(clean(autore, 100));
+        cache.setTitolo(clean(titolo, 300));
+        cache.setVolume(volume);
+        cache.setCasaEditrice(clean(casaEditrice, 100));
+        cache.setPrezzo(prezzo);
+        cache.setSource(SOURCE_USER_MANUAL);
+        cache.setCreated_at(now);
+        cache.setUpdated_at(now);
+
+        cacheRepository.save(cache);
+        return true;
     }
 
     private Optional<BookLookupResult> lookupCachedBook(String isbn) {

@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubjectServiceTest {
-    private final SubjectService service = new SubjectService(null, null);
+    private final SubjectService service = new SubjectService(null, null, null);
 
     @Test
     void teacherCanViewSubjectsForClassesInOwnInstitution() {

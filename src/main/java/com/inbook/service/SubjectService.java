@@ -26,13 +26,15 @@ import java.security.Principal;
 public class SubjectService {
     private final SubjectRepository subjectRepository;
     private final BookRepository bookRepository;
+    private final BookLookupService bookLookupService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public SubjectService(SubjectRepository subjectRepository, BookRepository bookRepository) {
+    public SubjectService(SubjectRepository subjectRepository, BookRepository bookRepository, BookLookupService bookLookupService) {
         this.subjectRepository = subjectRepository;
         this.bookRepository = bookRepository;
+        this.bookLookupService = bookLookupService;
     }
 
     public Subject loadMateria(SchoolClass classe, AppUser docente, String nomeMateria, Long created_at, Long updated_at) {
@@ -166,6 +168,16 @@ public class SubjectService {
         book.setDaAcquistare(daAcquistare);
         book.setConsigliato(consigliato);
         Book savedBook = bookRepository.save(book);
+        if (bookLookupService != null) {
+            bookLookupService.cacheManualBookIfAbsent(
+                    cleanIsbn,
+                    cleanAutore,
+                    cleanTitolo,
+                    volume,
+                    cleanCasaEditrice,
+                    prezzo
+            );
+        }
 
         subject.setBook(savedBook);
         subject.setUpdated_at(System.currentTimeMillis());

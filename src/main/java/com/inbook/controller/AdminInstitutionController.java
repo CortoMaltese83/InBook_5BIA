@@ -20,6 +20,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class AdminInstitutionController {
@@ -45,10 +47,11 @@ public class AdminInstitutionController {
         model.addAttribute("teachers", service.listTeachers());
         model.addAttribute("invitations", service.listInvitations());
         model.addAttribute("auditEvents", service.latestAuditEvents(10));
+        model.addAttribute("auditActionLabels", service.auditActionLabels());
         return "institutionManager";
     }
 
-    @GetMapping("/admin/institutions/audit")
+    @GetMapping({"/admin/activity-log", "/admin/institutions/audit"})
     public String auditEvents(@RequestParam(name = "search", required = false) String search,
                               @RequestParam(name = "action", required = false) String action,
                               @RequestParam(name = "institutionId", required = false) String institutionIdParam,
@@ -63,11 +66,17 @@ public class AdminInstitutionController {
 
         Long institutionId = parseOptionalLong(institutionIdParam);
         Page<AdminAuditEvent> auditPage = service.searchAuditEvents(search, action, institutionId, page, size);
+        Map<String, String> auditActionLabels = service.auditActionLabels();
+        List<String> auditActions = service.listAuditActions();
+        List<AuditActionOption> auditActionOptions = auditActions.stream()
+                .map(auditAction -> new AuditActionOption(auditAction, auditActionLabels.getOrDefault(auditAction, auditAction)))
+                .toList();
         model.addAttribute("username", user.getEmail());
         model.addAttribute("auditPage", auditPage);
         model.addAttribute("auditEvents", auditPage.getContent());
         model.addAttribute("institutions", service.listInstitutions());
-        model.addAttribute("auditActions", service.listAuditActions());
+        model.addAttribute("auditActionOptions", auditActionOptions);
+        model.addAttribute("auditActionLabels", auditActionLabels);
         model.addAttribute("auditSearch", search);
         model.addAttribute("selectedAction", action);
         model.addAttribute("selectedInstitutionId", institutionId);
@@ -189,5 +198,8 @@ public class AdminInstitutionController {
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
+    }
+
+    public record AuditActionOption(String value, String label) {
     }
 }

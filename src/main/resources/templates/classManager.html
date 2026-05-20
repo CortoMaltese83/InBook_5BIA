@@ -37,6 +37,7 @@
                 <a href="/admin/classes?stato=active" class="nav-link active">Classi</a>
                 <a href="/admin/institutions" class="nav-link" th:if="${canManageClasses}">Istituti</a>
                 <a href="/admin/books/import" class="nav-link" th:if="${canManageClasses}">Import Libri</a>
+                <a href="/admin/activity-log" class="nav-link" th:if="${canManageClasses}">Registro attività</a>
 
                 <form class="logout-form" th:action="@{/logout}" method="post">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />

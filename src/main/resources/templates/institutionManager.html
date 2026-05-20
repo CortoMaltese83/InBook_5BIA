@@ -20,7 +20,7 @@
         <a href="/admin/classes?stato=active" class="nav-link">Classi</a>
         <a href="/admin/institutions" class="nav-link active">Istituti</a>
         <a href="/admin/books/import" class="nav-link">Import Libri</a>
-        <a href="/admin/institutions/audit" class="nav-link">Audit</a>
+        <a href="/admin/activity-log" class="nav-link">Registro attività</a>
         <form class="logout-form" th:action="@{/logout}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <button type="submit" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
@@ -208,8 +208,8 @@
 
     <section class="section">
         <div class="section-header">
-            <h2>Audit recenti</h2>
-            <a class="section-link" href="/admin/institutions/audit">
+            <h2>Attività recenti</h2>
+            <a class="section-link" href="/admin/activity-log">
                 Vedi tutti <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
@@ -219,12 +219,12 @@
                 <tbody>
                 <tr th:each="event : ${auditEvents}">
                     <td th:text="${event.created_at}">-</td>
-                    <td th:text="${event.action}">azione</td>
+                    <td th:text="${auditActionLabels.get(event.action) != null ? auditActionLabels.get(event.action) : event.action}">azione</td>
                     <td th:text="${event.actor != null ? event.actor.email : 'sistema'}">attore</td>
                     <td th:text="${event.targetUser != null ? event.targetUser.email : '-'}">target</td>
                     <td th:text="${event.details}">dettagli</td>
                 </tr>
-                <tr th:if="${#lists.isEmpty(auditEvents)}"><td colspan="5" class="empty">Nessun evento audit.</td></tr>
+                <tr th:if="${#lists.isEmpty(auditEvents)}"><td colspan="5" class="empty">Nessuna attività registrata.</td></tr>
                 </tbody>
             </table>
         </div>

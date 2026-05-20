@@ -12,7 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BookLookupServiceTest {
     private final BookLookupService service = new BookLookupService(null, List.of(), false);
@@ -97,6 +99,84 @@ class BookLookupServiceTest {
         assertEquals(1, findCount.get());
         assertEquals(1, saveCount.get());
         assertEquals("GOOGLE_BOOKS", savedBook.get().getSource());
+    }
+
+    @Test
+    void manualBookIsCachedWhenMissing() {
+        AtomicInteger findCount = new AtomicInteger();
+        AtomicInteger saveCount = new AtomicInteger();
+        AtomicReference<BookLookupCache> savedBook = new AtomicReference<>();
+        BookLookupCacheRepository cacheRepository = emptyCacheRepository(findCount, saveCount, savedBook);
+        BookLookupService lookupService = new BookLookupService(cacheRepository, List.of(), false);
+
+        boolean cached = lookupService.cacheManualBookIfAbsent(
+                "978-88-360-2121-5",
+                "Autore manuale",
+                "Titolo manuale",
+                2,
+                "Editore manuale",
+                19.90
+        );
+
+        assertTrue(cached);
+        assertEquals(1, findCount.get());
+        assertEquals(1, saveCount.get());
+        assertEquals("9788836021215", savedBook.get().getIsbn());
+        assertEquals("Titolo manuale", savedBook.get().getTitolo());
+        assertEquals("USER_MANUAL", savedBook.get().getSource());
+    }
+
+    @Test
+    void manualBookDoesNotOverwriteExistingCacheEntry() {
+        BookLookupCache cachedBook = new BookLookupCache();
+        cachedBook.setIsbn("9788836021215");
+        cachedBook.setAutore("Autore cache");
+        cachedBook.setTitolo("Titolo cache");
+        cachedBook.setVolume(1);
+        cachedBook.setCasaEditrice("Editore cache");
+        cachedBook.setPrezzo(12.50);
+        cachedBook.setSource("MIM_OPEN_DATA");
+        cachedBook.setCreated_at(1L);
+        cachedBook.setUpdated_at(1L);
+
+        AtomicInteger findCount = new AtomicInteger();
+        AtomicInteger saveCount = new AtomicInteger();
+        BookLookupCacheRepository cacheRepository = cacheRepositoryReturning(cachedBook, findCount, saveCount, null);
+        BookLookupService lookupService = new BookLookupService(cacheRepository, List.of(), false);
+
+        boolean cached = lookupService.cacheManualBookIfAbsent(
+                "9788836021215",
+                "Nuovo autore",
+                "Nuovo titolo",
+                1,
+                "Nuovo editore",
+                10.00
+        );
+
+        assertFalse(cached);
+        assertEquals(1, findCount.get());
+        assertEquals(0, saveCount.get());
+    }
+
+    @Test
+    void invalidManualIsbnIsNotCached() {
+        AtomicInteger findCount = new AtomicInteger();
+        AtomicInteger saveCount = new AtomicInteger();
+        BookLookupCacheRepository cacheRepository = emptyCacheRepository(findCount, saveCount, null);
+        BookLookupService lookupService = new BookLookupService(cacheRepository, List.of(), false);
+
+        boolean cached = lookupService.cacheManualBookIfAbsent(
+                "123",
+                "Autore",
+                "Titolo",
+                1,
+                "Editore",
+                9.99
+        );
+
+        assertFalse(cached);
+        assertEquals(0, findCount.get());
+        assertEquals(0, saveCount.get());
     }
 
     @Test

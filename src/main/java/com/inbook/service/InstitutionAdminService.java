@@ -11,8 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -110,6 +112,28 @@ public class InstitutionAdminService {
 
     public List<String> listAuditActions() {
         return auditRepository.findDistinctActions();
+    }
+
+    public Map<String, String> auditActionLabels() {
+        Map<String, String> labels = new LinkedHashMap<>();
+        labels.put("INSTITUTION_CREATE", "Istituto creato");
+        labels.put("INSTITUTION_UPDATE", "Istituto aggiornato");
+        labels.put("DOMAIN_ADD", "Dominio aggiunto");
+        labels.put("DOMAIN_ENABLE", "Dominio abilitato");
+        labels.put("DOMAIN_DISABLE", "Dominio disabilitato");
+        labels.put("INVITE_CREATE", "Invito docente creato");
+        labels.put("INVITE_REVOKE", "Invito docente revocato");
+        labels.put("TEACHER_REGISTER", "Docente registrato");
+        labels.put("TEACHER_VERIFY_INVITED", "Docente invitato verificato");
+        labels.put("TEACHER_VERIFY_PENDING_APPROVAL", "Docente in attesa approvazione");
+        labels.put("TEACHER_APPROVE", "Docente approvato");
+        labels.put("TEACHER_SUSPEND", "Docente sospeso");
+        labels.put("TEACHER_REACTIVATE", "Docente riattivato");
+        labels.put("TEACHER_DELETE", "Docente eliminato");
+        labels.put(AdminActivityLogService.ACTION_BOOK_IMPORT_MIM_START, "Import Open Data MIM avviato");
+        labels.put(AdminActivityLogService.ACTION_BOOK_IMPORT_FALLBACK_START, "Aggiornamento ISBN locali avviato");
+        labels.put("BOOK_IMPORT_RUN_START", "Batch import libri avviato");
+        return labels;
     }
 
     @Transactional

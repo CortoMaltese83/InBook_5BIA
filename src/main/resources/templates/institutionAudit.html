@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InBook - Audit Istituti</title>
+    <title>InBook - Registro attività</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <link rel="stylesheet" href="/css/institutionManager.css">
@@ -13,14 +13,14 @@
 <body>
 <header class="header">
     <div>
-        <h1>AUDIT ISTITUTI</h1>
+        <h1>REGISTRO ATTIVITÀ</h1>
         <span class="username" th:text="${username}">admin</span>
     </div>
     <nav class="nav">
         <a href="/admin/classes?stato=active" class="nav-link">Classi</a>
         <a href="/admin/institutions" class="nav-link">Istituti</a>
         <a href="/admin/books/import" class="nav-link">Import Libri</a>
-        <a href="/admin/institutions/audit" class="nav-link active">Audit</a>
+        <a href="/admin/activity-log" class="nav-link active">Registro attività</a>
         <form class="logout-form" th:action="@{/logout}" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
             <button type="submit" class="nav-link logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
@@ -31,20 +31,20 @@
 <main class="main-container">
     <section class="section">
         <div class="section-header">
-            <h2>Ricerca audit</h2>
+            <h2>Ricerca attività</h2>
             <a class="section-link" href="/admin/institutions">
                 <i class="fa-solid fa-arrow-left"></i> Istituti
             </a>
         </div>
 
-        <form class="inline-form filter-form" action="/admin/institutions/audit" method="get">
+        <form class="inline-form filter-form" action="/admin/activity-log" method="get">
             <input type="search" name="search" placeholder="Cerca azione, utente, dettagli" th:value="${auditSearch}">
             <select name="action">
                 <option value="">Tutte le azioni</option>
-                <option th:each="auditAction : ${auditActions}"
-                        th:value="${auditAction}"
-                        th:text="${auditAction}"
-                        th:selected="${auditAction == selectedAction}"></option>
+                <option th:each="auditAction : ${auditActionOptions}"
+                        th:value="${auditAction.value}"
+                        th:text="${auditAction.label}"
+                        th:selected="${auditAction.value == selectedAction}"></option>
             </select>
             <select name="institutionId">
                 <option value="">Tutti gli istituti</option>
@@ -60,7 +60,7 @@
                 <option value="100" th:selected="${auditSize == 100}">100 righe</option>
             </select>
             <button type="submit"><i class="fa-solid fa-magnifying-glass"></i> Cerca</button>
-            <a class="btn-small btn-secondary" href="/admin/institutions/audit">Reset</a>
+            <a class="btn-small btn-secondary" href="/admin/activity-log">Reset</a>
         </form>
     </section>
 
@@ -84,14 +84,14 @@
                 <tbody>
                 <tr th:each="event : ${auditEvents}">
                     <td th:text="${event.created_at}">-</td>
-                    <td th:text="${event.action}">azione</td>
+                    <td th:text="${auditActionLabels.get(event.action) != null ? auditActionLabels.get(event.action) : event.action}">azione</td>
                     <td th:text="${event.institution != null ? event.institution.name : '-'}">istituto</td>
                     <td th:text="${event.actor != null ? event.actor.email : 'sistema'}">attore</td>
                     <td th:text="${event.targetUser != null ? event.targetUser.email : '-'}">target</td>
                     <td th:text="${event.details}">dettagli</td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(auditEvents)}">
-                    <td colspan="6" class="empty">Nessun evento audit.</td>
+                    <td colspan="6" class="empty">Nessuna attività registrata.</td>
                 </tr>
                 </tbody>
             </table>
@@ -100,13 +100,13 @@
         <div class="pager" th:if="${auditPage.totalPages > 1}">
             <a class="btn-small btn-secondary"
                th:if="${auditPage.hasPrevious()}"
-               th:href="@{/admin/institutions/audit(search=${auditSearch}, action=${selectedAction}, institutionId=${selectedInstitutionId}, size=${auditSize}, page=${auditPage.number - 1})}">
+               th:href="@{/admin/activity-log(search=${auditSearch}, action=${selectedAction}, institutionId=${selectedInstitutionId}, size=${auditSize}, page=${auditPage.number - 1})}">
                 <i class="fa-solid fa-chevron-left"></i> Precedente
             </a>
             <span th:text="${'Pagina ' + (auditPage.number + 1) + ' di ' + auditPage.totalPages}">Pagina 1 di 1</span>
             <a class="btn-small btn-secondary"
                th:if="${auditPage.hasNext()}"
-               th:href="@{/admin/institutions/audit(search=${auditSearch}, action=${selectedAction}, institutionId=${selectedInstitutionId}, size=${auditSize}, page=${auditPage.number + 1})}">
+               th:href="@{/admin/activity-log(search=${auditSearch}, action=${selectedAction}, institutionId=${selectedInstitutionId}, size=${auditSize}, page=${auditPage.number + 1})}">
                 Successiva <i class="fa-solid fa-chevron-right"></i>
             </a>
         </div>
