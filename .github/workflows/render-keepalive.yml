@@ -16,4 +16,4 @@ jobs:
       - name: Call keepalive endpoint
         run: |
           curl --fail --silent --show-error --max-time 30 \
-            https://inbook-5bia.onrender.com/keepalive
+            https://inbook-5bia.onrender.com/keeplive
