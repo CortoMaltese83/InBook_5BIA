@@ -70,7 +70,8 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/verify",
                                 "/invite/accept",
-                                "/login"
+                                "/login",
+                                "/keeplive"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
