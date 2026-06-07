@@ -44,3 +44,7 @@ build/
 !/config/application-example.properties
 .env
 .env.*
+
+### H2 local runtime files ###
+data/*.lock.db
+data/*.trace.db
