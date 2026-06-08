@@ -48,6 +48,15 @@ public class AppUser {
     @Column
     private Long emailVerificationExpiresAt;
 
+    @Column(length = 64, unique = true)
+    private String passwordResetTokenHash;
+
+    @Column
+    private Long passwordResetExpiresAt;
+
+    @Column
+    private Long passwordResetRequestedAt;
+
     @ManyToOne(optional = true)
     @JoinColumn(name = "registration_invitation_id")
     private TeacherInvitation registrationInvitation;
@@ -77,6 +86,9 @@ public class AppUser {
     public Boolean getEmailVerified() { return emailVerified; }
     public String getEmailVerificationToken() { return emailVerificationToken; }
     public Long getEmailVerificationExpiresAt() { return emailVerificationExpiresAt; }
+    public String getPasswordResetTokenHash() { return passwordResetTokenHash; }
+    public Long getPasswordResetExpiresAt() { return passwordResetExpiresAt; }
+    public Long getPasswordResetRequestedAt() { return passwordResetRequestedAt; }
     public TeacherInvitation getRegistrationInvitation() { return registrationInvitation; }
 
     public void setEmail(String email) { this.email = email; }
@@ -91,6 +103,9 @@ public class AppUser {
     public void setEmailVerified(Boolean emailVerified) { this.emailVerified = emailVerified; }
     public void setEmailVerificationToken(String emailVerificationToken) { this.emailVerificationToken = emailVerificationToken; }
     public void setEmailVerificationExpiresAt(Long emailVerificationExpiresAt) { this.emailVerificationExpiresAt = emailVerificationExpiresAt; }
+    public void setPasswordResetTokenHash(String passwordResetTokenHash) { this.passwordResetTokenHash = passwordResetTokenHash; }
+    public void setPasswordResetExpiresAt(Long passwordResetExpiresAt) { this.passwordResetExpiresAt = passwordResetExpiresAt; }
+    public void setPasswordResetRequestedAt(Long passwordResetRequestedAt) { this.passwordResetRequestedAt = passwordResetRequestedAt; }
     public void setRegistrationInvitation(TeacherInvitation registrationInvitation) { this.registrationInvitation = registrationInvitation; }
 
 }

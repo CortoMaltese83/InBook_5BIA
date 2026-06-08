@@ -56,6 +56,20 @@ public class NotificationService {
         sendOrLog(invitation.getEmail(), subject, body, link);
     }
 
+    public void sendPasswordResetEmail(AppUser user, String token) {
+        String link = appBaseUrl + "/password-reset/reset?token=" + token;
+        String subject = "Reimposta la password InBook";
+        String body = """
+                Ciao %s,
+
+                apri questo link per reimpostare la password del tuo account InBook:
+                %s
+
+                Il link scade automaticamente. Se non hai richiesto tu questa operazione, ignora questa email.
+                """.formatted(user.getName(), link);
+        sendOrLog(user.getEmail(), subject, body, link);
+    }
+
     private void sendOrLog(String to, String subject, String body, String link) {
         if (mailSender == null) {
             log.info("Email non inviata: JavaMailSender non configurato. Destinatario={}, Oggetto={}, Link={}", to, subject, link);

@@ -71,6 +71,7 @@ public class SecurityConfig {
                                 "/auth/verify",
                                 "/invite/accept",
                                 "/login",
+                                "/password-reset/**",
                                 "/keeplive"
                         ).permitAll()
                         .anyRequest().authenticated()
