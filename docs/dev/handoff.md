@@ -1,6 +1,6 @@
 # InBook - Handoff tecnico
 
-Data fotografia: 2026-05-25.
+Data fotografia: 2026-06-08.
 
 Questo documento usa come fonte di verita solo la codebase attuale e la fotografia prodotta nella sessione corrente. Non incorpora decisioni prese in thread precedenti se non verificabili nei file presenti.
 
@@ -19,13 +19,18 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
   - template Thymeleaf in `src/main/resources/templates`.
   - CSS, JS e immagini in `src/main/resources/static`.
 - Configurazione principale in `src/main/resources/application.properties`.
-- Database H2 locale su file in `data/appdb.mv.db` e `data/appdb.trace.db`.
+- Script dati in `src/main/resources/scripts`:
+  - `appdb-data-only.sql`: dump data-only importabile da classpath.
+  - `load-appdb-data.sql`: wrapper `RUNSCRIPT` per importare il dump data-only.
+- Workflow GitHub in `.github/workflows`:
+  - `discord.yml`: notifica Discord.
+  - `render-keepalive.yml`: chiamata periodica al deploy Render.
+- Database H2 locale su file in `data/appdb.mv.db`; `data/*.trace.db` e `data/*.lock.db` sono ignorati.
 - Test unitari in `src/test/java/com/inbook/service`.
 - Artefatti build presenti in `target/`, ignorati da Git.
 - Stato Git osservato nella fotografia:
-  - `data/appdb.mv.db` modificato.
-  - `docs/` non tracciata.
-  - `config/` ignorata da Git.
+  - `src/main/resources/scripts/load-appdb-data.sql` risulta in stato `AM`.
+  - `data/appdb-dump.sql` risulta non tracciato.
 
 ### Stack
 
@@ -46,13 +51,15 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 - Hibernate e' configurato con `spring.jpa.hibernate.ddl-auto=update`.
 - SQL logging abilitato (`spring.jpa.show-sql=true`).
 - Console H2 abilitata su `/h2-console`.
+- Console H2 configurata con `spring.h2.console.settings.web-allow-others=true`.
+- Username/password H2 non sono definiti in `application.properties`; vanno forniti tramite variabili d'ambiente o configurazione locale non committata.
 - Lookup libri remoto abilitato di default.
 - Import schedulato MIM disabilitato di default, ma le sorgenti CSV MIM sono configurate in `application.properties`.
 - Esiste un file locale ignorato `config/application.properties` con configurazione SMTP reale.
 
 ### Modello dati rilevato
 
-- `AppUser`: utenti applicativi, ruoli stringa, stato, verifica email, istituto associato, invito di registrazione.
+- `AppUser`: utenti applicativi, ruoli stringa, stato, verifica email, campi reset password, istituto associato, invito di registrazione.
 - `Institution`: istituti con codice univoco e stato.
 - `InstitutionDomain`: domini email associati a istituti.
 - `TeacherInvitation`: inviti docente con token e scadenza.
@@ -67,9 +74,20 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 
 - Login con form custom su `/login`.
 - Redirect post-login verso `/admin/classes`.
+- Endpoint pubblico `/keeplive` che risponde `OK` in `text/plain`.
+- Workflow GitHub `render-keepalive.yml` schedulato ogni 14 minuti e invocabile manualmente per chiamare `https://inbook-5bia.onrender.com/keeplive`.
 - Registrazione docente via `/signin` e `/auth/register`.
 - Verifica email via `/auth/verify`.
 - Accettazione invito via `/invite/accept`.
+- Reset password docente:
+  - richiesta pubblica su `/password-reset/request`.
+  - reset con token su `/password-reset/reset`.
+  - link dalla pagina login.
+  - token salvato come hash SHA-256.
+  - token valido 60 minuti e monouso.
+  - invio consentito solo a docenti abilitati e con email verificata.
+  - throttle di 24 ore tra due invii.
+  - risposta richiesta sempre generica per non esporre quali email esistono.
 - Gestione istituti admin:
   - creazione e modifica istituto.
   - gestione domini email.
@@ -99,18 +117,29 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
   - dettaglio run, scarti raggruppati e interruzione manuale.
 - Email:
   - invio verifica account e inviti docente via `NotificationService`.
+  - invio link reset password docente.
   - se `JavaMailSender` non e' disponibile o fallisce, viene loggato il link.
+- Import dati demo:
+  - `src/main/resources/scripts/appdb-data-only.sql` e' importabile da classpath.
+  - `src/main/resources/scripts/load-appdb-data.sql` disabilita temporaneamente l'integrita referenziale, esegue il dump data-only e la riabilita.
+  - il dump include seed demo per 53 classi e 545 materie dell'IISS Volta De Gemmis.
+  - il dump crea 41 libri partendo da record completi di `BOOK_LOOKUP_CACHE`.
+  - 218 materie, circa il 40%, vengono associate a un libro con match statico per classe/materia.
+  - le materie non mappate restano senza libro associato (`BOOK_ID = NULL`).
+  - le materie seed assegnano dinamicamente `DOCENTE_ID` al primo docente abilitato, altrimenti al primo utente disponibile; se non esiste alcun utente, le materie non vengono inserite.
 
 ### Test presenti
 
 - `BookLookupServiceTest`: normalizzazione ISBN, cache, fallback remoto, errori remoti, caching manuale.
 - `ClasseServiceTest`: regole base creazione classe e cancellazione classe/libri non referenziati.
 - `SubjectServiceTest`: accesso classi per istituto, permessi modifica materia, admin.
+- `PasswordResetServiceTest`: creazione token reset, blocco secondo invio entro 24 ore, blocco docente non verificato, aggiornamento password e pulizia token.
 - Report `target/surefire-reports` presenti dalla run precedente indicano:
   - `BookLookupServiceTest`: 13 test passati.
   - `SubjectServiceTest`: 4 test passati.
   - `ClasseServiceTest`: 5 test, 2 errori legati a inizializzazione Mockito/Byte Buddy su JDK 23.
   - Report anche per `AieBookLookupServiceTest`, ma il sorgente non e' presente nella codebase attuale.
+- Non e' presente Maven Wrapper (`mvnw`).
 
 ### TODO rilevati
 
@@ -122,10 +151,12 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 - Architettura Spring MVC server-rendered con Thymeleaf, piu endpoint JSON usati dai JS statici.
 - Persistenza via JPA/Hibernate su H2 file locale.
 - Schema gestito implicitamente da Hibernate con `ddl-auto=update`; non ci sono migrazioni versionate.
+- Dump data-only usato per demo/deploy salvato come risorsa classpath in `src/main/resources/scripts`.
 - Security:
   - `/api/**` usa HTTP Basic stateless e richiede ruolo `API`.
   - il resto dell'app usa form login.
   - molte rotte MVC mutating sono escluse da CSRF.
+  - `/keeplive` e `/password-reset/**` sono pubbliche.
 - Ruoli e stati sono stringhe libere, non enum:
   - esempi ruoli: `TYPE_ADMIN`, `TYPE_DOCENTE`.
   - esempi stati classe: `active`, `archived`, `hidden`.
@@ -138,6 +169,8 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 - L'import MIM usa un executor single-thread con coda zero, cosi viene impedito piu di un import asincrono contemporaneo.
 - Il lookup ISBN privilegia cache locale, poi provider remoti in ordine Google Books e Open Library.
 - L'export XLSX e' implementato manualmente con ZIP/XML, senza libreria esterna per Excel.
+- Il reset password docente non recupera la password esistente: permette solo di impostarne una nuova tramite token temporaneo.
+- Il keepalive e' affidato a GitHub Actions; il valore cron `*/14 * * * *` non garantisce esecuzione al secondo esatto, ma e' adeguato per ping periodico.
 
 ## Problemi aperti
 
@@ -146,14 +179,18 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 - Credenziali SMTP reali sono presenti nel file locale ignorato `config/application.properties`.
 - Admin seed hardcoded con password nota: `admin@gmail.com` / `admin123`.
 - Console H2 abilitata e permessa.
+- H2 console e' esposta anche a connessioni remote tramite `web-allow-others=true`; va considerata una scelta da demo, non produzione.
 - CSRF disabilitato su molte rotte che modificano stato applicativo.
 - I pulsanti social Google/Apple in login/registrazione sono UI statiche, senza integrazione OAuth.
 
 ### Persistenza e dati
 
-- Database H2 locale e' parte del repository ed e' modificato nel working tree.
+- Database H2 locale e' parte del repository; la presenza di un DB binario versionato resta un rischio operativo.
 - Non esistono migrazioni DB versionate.
 - `ddl-auto=update` rende lo schema dipendente dall'avvio applicativo.
+- Il dump SQL data-only e' grande e contiene dati demo; il caricamento da H2 console dipende dal classpath del jar deployato.
+- Il seed materie richiede almeno un utente esistente per valorizzare `MATERIA.DOCENTE_ID`.
+- Circa il 60% delle materie seed resta senza libro associato; le associazioni presenti derivano da match statici sulla cache e non da adozioni ufficiali esportate dal gestionale.
 - Relazione `Subject.book` basata su ISBN modificabile: rischio inconsistenza se un libro cambia ISBN.
 - `SchoolClass.institution` e `SchoolClass.docente` sono nullable per migrazione; il codice contiene fallback per classi non backfillate.
 
@@ -172,7 +209,8 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 - Copertura test limitata ai service principali.
 - Mancano test controller, security, repository query, template, import MIM, export XLSX, registrazione/email.
 - I report esistenti indicano errori Mockito su JDK 23 per parte dei test.
-- Non e' presente una workflow CI di build/test; esiste solo `.github/workflows/discord.yml` per notifica Discord.
+- Non e' presente una workflow CI di build/test; esistono workflow per notifica Discord e keepalive Render.
+- Non e' presente Maven Wrapper, quindi la build locale dipende da Maven installato sulla macchina.
 
 ### Operativita
 
@@ -192,6 +230,7 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
 2. Stabilizzare persistenza:
    - introdurre migrazioni versionate.
    - decidere se il DB H2 deve restare nel repository; in caso contrario rimuoverlo dal versionamento.
+   - decidere se mantenere `appdb-data-only.sql` come seed demo temporaneo o separarlo da dump/import operativi.
    - sostituire la FK `Subject.book -> Book.isbn` con una relazione su id oppure bloccare formalmente la modifica ISBN.
 3. Pulire flussi legacy libri:
    - decidere se `BookController` e `/book/view` servono ancora.
@@ -212,6 +251,7 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
    - aggiungere test per security e permessi controller.
    - aggiungere test repository per query filtrate per istituto.
    - aggiungere test import MIM con CSV fixture locale.
+   - aggiungere test controller per reset password e rotte pubbliche.
    - aggiungere test export XLSX almeno su contenuto ZIP/XML.
 
 ### Priorita bassa
@@ -230,3 +270,4 @@ Questo documento usa come fonte di verita solo la codebase attuale e la fotograf
    - build Maven.
    - test.
    - eventuale controllo che file segreti e DB locali non vengano committati.
+10. Valutare un endpoint/admin flow per import dati demo, invece di dipendere da esecuzione manuale H2 console.
